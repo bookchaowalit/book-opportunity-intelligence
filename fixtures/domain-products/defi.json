@@ -1,0 +1,47 @@
+{
+  "schema_version": "defi.v1",
+  "source": "book-defi-data",
+  "retrieved_at": "2026-08-01T12:00:00Z",
+  "data_status": "stale",
+  "items": [
+    {
+      "pool_id": "pool-aave-usdc",
+      "chain": "Ethereum",
+      "project": "aave-v3",
+      "symbol": "USDC",
+      "tvl_usd": "1000000",
+      "apy": "5.5",
+      "apy_base": "5.0",
+      "apy_reward": "0.5",
+      "reward_tokens": "",
+      "category": "Lending",
+      "url": "https://example.com/aave",
+      "scraped_at": "2026-08-01 12:00:00",
+      "record_id": "pool-aave-usdc",
+      "event_id": "evt-defi-pool-aave-usdc",
+      "ingest_run_id": "run-fixture-defi",
+      "raw_object_key": "landing/source=book-defi-data/run=fixture/pool-aave-usdc.json",
+      "source_record_id": "pool-aave-usdc"
+    },
+    {
+      "pool_id": "pool-compound-dai",
+      "chain": "Ethereum",
+      "project": "compound",
+      "symbol": "DAI",
+      "tvl_usd": "500000",
+      "apy": "4.2",
+      "apy_base": "4.2",
+      "apy_reward": "0",
+      "reward_tokens": "",
+      "category": "Lending",
+      "url": "https://example.com/compound",
+      "scraped_at": "2026-08-01 12:00:00",
+      "record_id": "pool-compound-dai",
+      "event_id": "evt-defi-pool-compound-dai",
+      "ingest_run_id": "run-fixture-defi",
+      "raw_object_key": "landing/source=book-defi-data/run=fixture/pool-compound-dai.json",
+      "source_record_id": "pool-compound-dai"
+    }
+  ],
+  "next_cursor": null
+}

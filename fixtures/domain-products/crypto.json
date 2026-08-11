@@ -1,0 +1,37 @@
+{
+  "schema_version": "crypto.v1",
+  "source": "book-crypto-data",
+  "retrieved_at": "2026-08-01T12:00:00Z",
+  "data_status": "stale",
+  "items": [
+    {
+      "coin_id": "bitcoin",
+      "currency": "usd",
+      "price": "65000",
+      "change_24h_pct": "1.2",
+      "volume_24h": "1000",
+      "market_cap": "1e12",
+      "updated_at": "2026-08-01 12:00:00",
+      "record_id": "bitcoin:usd",
+      "event_id": "evt-crypto-bitcoin-usd",
+      "ingest_run_id": "run-fixture-crypto",
+      "raw_object_key": "landing/source=book-crypto-data/run=fixture/bitcoin:usd.json",
+      "source_record_id": "bitcoin:usd"
+    },
+    {
+      "coin_id": "ethereum",
+      "currency": "usd",
+      "price": "3200",
+      "change_24h_pct": "-0.5",
+      "volume_24h": "500",
+      "market_cap": "4e11",
+      "updated_at": "2026-08-01 12:00:00",
+      "record_id": "ethereum:usd",
+      "event_id": "evt-crypto-ethereum-usd",
+      "ingest_run_id": "run-fixture-crypto",
+      "raw_object_key": "landing/source=book-crypto-data/run=fixture/ethereum:usd.json",
+      "source_record_id": "ethereum:usd"
+    }
+  ],
+  "next_cursor": null
+}

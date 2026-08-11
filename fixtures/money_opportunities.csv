@@ -1,0 +1,3 @@
+title,category,source,price,url,trend_score,competition_level,notes,scraped_at,score_delta,trend_direction
+Show HN: AI agent builder,ai-content,Hacker News,,https://news.ycombinator.com/item?id=1,85,medium,HN story,2026-08-01 12:00:00,0,stable
+New OSS automation tool,ai-content,GitHub Trending,,https://github.com/example/tool,78,low,New repo,2026-08-01 12:00:00,5,up

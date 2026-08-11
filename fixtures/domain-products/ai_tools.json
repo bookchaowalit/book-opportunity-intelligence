@@ -1,0 +1,43 @@
+{
+  "schema_version": "ai_tools.v1",
+  "source": "book-ai-tools-data",
+  "retrieved_at": "2026-08-01T12:00:00Z",
+  "data_status": "stale",
+  "items": [
+    {
+      "name": "Example AI Chat",
+      "description": "Chat assistant",
+      "url": "https://example.com/ai-chat",
+      "source": "fixture",
+      "upvotes": "100",
+      "category": "chatbot",
+      "pricing": "free",
+      "tags": "chatbot",
+      "opportunity_tags": "api,chatbot",
+      "scraped_at": "2026-08-01 12:00:00",
+      "record_id": "hash:ai0",
+      "event_id": "evt-ai_tools-hash-ai0",
+      "ingest_run_id": "run-fixture-ai_tools",
+      "raw_object_key": "landing/source=book-ai-tools-data/run=fixture/hash:ai0.json",
+      "source_record_id": "hash:ai0"
+    },
+    {
+      "name": "Code Helper",
+      "description": "Coding agent",
+      "url": "https://example.com/code-helper",
+      "source": "fixture",
+      "upvotes": "50",
+      "category": "coding",
+      "pricing": "freemium",
+      "tags": "coding",
+      "opportunity_tags": "agent,code",
+      "scraped_at": "2026-08-01 12:00:00",
+      "record_id": "hash:ai1",
+      "event_id": "evt-ai_tools-hash-ai1",
+      "ingest_run_id": "run-fixture-ai_tools",
+      "raw_object_key": "landing/source=book-ai-tools-data/run=fixture/hash:ai1.json",
+      "source_record_id": "hash:ai1"
+    }
+  ],
+  "next_cursor": null
+}

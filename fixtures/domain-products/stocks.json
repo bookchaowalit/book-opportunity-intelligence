@@ -1,0 +1,41 @@
+{
+  "schema_version": "stock.v1",
+  "source": "book-stock-data",
+  "retrieved_at": "2026-08-01T12:00:00Z",
+  "data_status": "stale",
+  "items": [
+    {
+      "symbol": "AAPL",
+      "price": "190.5",
+      "prev_close": "189.0",
+      "change": "1.5",
+      "change_pct": "0.79",
+      "currency": "USD",
+      "exchange": "NMS",
+      "timestamp": "2026-08-01 16:00:00",
+      "scraped_at": "2026-08-01 16:05:00",
+      "record_id": "AAPL",
+      "event_id": "evt-stocks-AAPL",
+      "ingest_run_id": "run-fixture-stocks",
+      "raw_object_key": "landing/source=book-stocks-data/run=fixture/AAPL.json",
+      "source_record_id": "AAPL"
+    },
+    {
+      "symbol": "MSFT",
+      "price": "420.0",
+      "prev_close": "418.0",
+      "change": "2.0",
+      "change_pct": "0.48",
+      "currency": "USD",
+      "exchange": "NMS",
+      "timestamp": "2026-08-01 16:00:00",
+      "scraped_at": "2026-08-01 16:05:00",
+      "record_id": "MSFT",
+      "event_id": "evt-stocks-MSFT",
+      "ingest_run_id": "run-fixture-stocks",
+      "raw_object_key": "landing/source=book-stocks-data/run=fixture/MSFT.json",
+      "source_record_id": "MSFT"
+    }
+  ],
+  "next_cursor": null
+}

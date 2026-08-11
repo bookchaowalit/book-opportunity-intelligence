@@ -1,0 +1,39 @@
+{
+  "schema_version": "seo.v1",
+  "source": "book-seo-data",
+  "retrieved_at": "2026-08-01T12:00:00Z",
+  "data_status": "stale",
+  "items": [
+    {
+      "scraped_at": "2026-08-01 12:00:00",
+      "keyword": "python developer thailand",
+      "found": "True",
+      "best_rank": "5",
+      "best_domain": "bookchaowalit.com",
+      "best_url": "https://bookchaowalit.com",
+      "best_title": "Python Developer",
+      "total_results": "20",
+      "record_id": "hash:seo0",
+      "event_id": "evt-seo-hash-seo0",
+      "ingest_run_id": "run-fixture-seo",
+      "raw_object_key": "landing/source=book-seo-data/run=fixture/hash:seo0.json",
+      "source_record_id": "hash:seo0"
+    },
+    {
+      "scraped_at": "2026-08-01 12:00:00",
+      "keyword": "next.js developer bangkok",
+      "found": "False",
+      "best_rank": "",
+      "best_domain": "",
+      "best_url": "",
+      "best_title": "",
+      "total_results": "20",
+      "record_id": "hash:seo1",
+      "event_id": "evt-seo-hash-seo1",
+      "ingest_run_id": "run-fixture-seo",
+      "raw_object_key": "landing/source=book-seo-data/run=fixture/hash:seo1.json",
+      "source_record_id": "hash:seo1"
+    }
+  ],
+  "next_cursor": null
+}

@@ -1,0 +1,45 @@
+{
+  "schema_version": "flight.v1",
+  "source": "book-flight-data",
+  "retrieved_at": "2026-08-01T12:00:00Z",
+  "data_status": "stale",
+  "items": [
+    {
+      "origin": "BKK",
+      "destination": "SIN",
+      "price_thb": "3500",
+      "airline": "TG",
+      "departure": "2026-09-01 10:00",
+      "return": "",
+      "duration_hours": "2.5",
+      "stops": "0",
+      "url": "https://example.com/bkk-sin",
+      "source": "fixture",
+      "scraped_at": "2026-08-01 12:00:00",
+      "record_id": "BKK-SIN",
+      "event_id": "evt-flights-BKK-SIN",
+      "ingest_run_id": "run-fixture-flights",
+      "raw_object_key": "landing/source=book-flights-data/run=fixture/BKK-SIN.json",
+      "source_record_id": "BKK-SIN"
+    },
+    {
+      "origin": "BKK",
+      "destination": "TYO",
+      "price_thb": "8900",
+      "airline": "JL",
+      "departure": "2026-09-05 22:00",
+      "return": "",
+      "duration_hours": "6.0",
+      "stops": "0",
+      "url": "https://example.com/bkk-tyo",
+      "source": "fixture",
+      "scraped_at": "2026-08-01 12:00:00",
+      "record_id": "BKK-TYO",
+      "event_id": "evt-flights-BKK-TYO",
+      "ingest_run_id": "run-fixture-flights",
+      "raw_object_key": "landing/source=book-flights-data/run=fixture/BKK-TYO.json",
+      "source_record_id": "BKK-TYO"
+    }
+  ],
+  "next_cursor": null
+}
