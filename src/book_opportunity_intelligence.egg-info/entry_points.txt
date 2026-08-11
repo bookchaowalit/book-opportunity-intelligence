@@ -1,3 +1,0 @@
-[console_scripts]
-book-opportunity-intelligence = book_opportunities.ingest:main
-book-opportunity-intelligence-api = book_opportunities.api:main
