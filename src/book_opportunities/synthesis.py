@@ -7,6 +7,7 @@ Does not scrape upstream sources. Does not perform external writes.
 from __future__ import annotations
 
 import hashlib
+import math
 import re
 from datetime import datetime, timezone
 from typing import Any, Iterable, Optional
@@ -81,12 +82,18 @@ def utc_now_stamp() -> str:
 
 
 def _safe_float(value: Any, default: float = 0.0) -> float:
+    """Parse a domain value as a finite float; NaN/inf/garbage -> default.
+
+    Domain APIs are untrusted input: a NaN or Infinity (valid in Python's JSON
+    decoder) would otherwise crash ``int(abs(x) * k)`` in the scorers.
+    """
     try:
-        if value is None or value == "":
+        if value is None or value == "" or isinstance(value, bool):
             return default
-        return float(value)
+        result = float(value)
     except (TypeError, ValueError):
         return default
+    return result if math.isfinite(result) else default
 
 
 def _safe_int(value: Any, default: int = 0) -> int:
@@ -94,7 +101,7 @@ def _safe_int(value: Any, default: int = 0) -> int:
         if value is None or value == "":
             return default
         return int(float(value))
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return default
 
 
@@ -307,7 +314,7 @@ def deduplicate(opportunities: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     break
         if url_match is not None:
             existing = merged[url_match]
-            if int(opp.get("trend_score") or 0) > int(existing.get("trend_score") or 0):
+            if _safe_int(opp.get("trend_score")) > _safe_int(existing.get("trend_score")):
                 old_source = existing.get("source")
                 merged[url_match] = dict(opp)
                 merged[url_match]["notes"] = (
@@ -319,7 +326,7 @@ def deduplicate(opportunities: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     f"{existing.get('notes', '')}"
                 )[:240]
             merged[url_match]["trend_score"] = min(
-                100, int(merged[url_match].get("trend_score") or 0) + 3
+                100, _safe_int(merged[url_match].get("trend_score")) + 3
             )
             continue
 
@@ -330,7 +337,7 @@ def deduplicate(opportunities: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 break
         if title_match is not None:
             existing = merged[title_match]
-            if int(opp.get("trend_score") or 0) > int(existing.get("trend_score") or 0):
+            if _safe_int(opp.get("trend_score")) > _safe_int(existing.get("trend_score")):
                 old_source = existing.get("source")
                 merged[title_match] = dict(opp)
                 merged[title_match]["notes"] = (
@@ -342,7 +349,7 @@ def deduplicate(opportunities: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     f"{existing.get('notes', '')}"
                 )[:240]
             merged[title_match]["trend_score"] = min(
-                100, int(merged[title_match].get("trend_score") or 0) + 3
+                100, _safe_int(merged[title_match].get("trend_score")) + 3
             )
             continue
 
@@ -376,7 +383,7 @@ def categorize_opportunity(opportunity: dict[str, Any]) -> str:
 
 
 def score_opportunity(opportunity: dict[str, Any]) -> int:
-    score = int(opportunity.get("trend_score") or 50)
+    score = _safe_int(opportunity.get("trend_score"), 50)
     title_lower = str(opportunity.get("title") or "").lower()
     if _has_keyword(title_lower, "ai"):
         score += 10
@@ -399,7 +406,7 @@ def rank_opportunities(opportunities: list[dict[str, Any]]) -> list[dict[str, An
     return sorted(
         opportunities,
         key=lambda o: (
-            -int(o.get("trend_score") or 0),
+            -_safe_int(o.get("trend_score")),
             str(o.get("title") or ""),
             str(o.get("url") or ""),
         ),
