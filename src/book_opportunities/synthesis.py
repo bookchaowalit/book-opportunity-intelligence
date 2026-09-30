@@ -291,8 +291,13 @@ def fuzzy_title_match(title_a: str, title_b: str, threshold: float = 0.6) -> boo
     words_b = _title_tokens(title_b)
     if not words_a or not words_b:
         return False
-    overlap = len(words_a & words_b) / min(len(words_a), len(words_b))
-    return overlap >= threshold
+    shared = len(words_a & words_b)
+    shorter = min(len(words_a), len(words_b))
+    if shorter == 1:
+        # A one-word title ("Bitcoin") used to merge with any title containing
+        # that word; only an identical one-word title is a duplicate now.
+        return words_a == words_b
+    return shared >= 2 and shared / shorter >= threshold
 
 
 def deduplicate(opportunities: list[dict[str, Any]]) -> list[dict[str, Any]]:

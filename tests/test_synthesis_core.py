@@ -116,6 +116,12 @@ class DedupeTests(unittest.TestCase):
         self.assertFalse(fuzzy_title_match("", "anything"))
         self.assertFalse(fuzzy_title_match("alpha beta", "gamma delta"))
 
+    def test_fuzzy_title_match_needs_more_than_one_shared_word(self) -> None:
+        self.assertFalse(fuzzy_title_match("Bitcoin", "Bitcoin ETF inflows hit record"))
+        self.assertTrue(fuzzy_title_match("Bitcoin", "bitcoin"))
+        self.assertFalse(fuzzy_title_match("AI tools", "AI regulation in Thailand"))
+        self.assertTrue(fuzzy_title_match("Cheap flights BKK Tokyo", "cheap flights bkk tokyo deal"))
+
     def test_same_url_keeps_higher_score_and_boosts(self) -> None:
         rows = [
             {"title": "One", "url": "u", "trend_score": 40, "source": "a"},
