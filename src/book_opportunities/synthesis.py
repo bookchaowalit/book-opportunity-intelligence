@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import math
 import re
+import unicodedata
 from datetime import datetime, timezone
 from typing import Any, Iterable, Optional
 
@@ -286,9 +287,19 @@ _THAI_CHARS = re.compile(r"[\u0e00-\u0e7f]+")
 _THAI_NGRAM = 3
 
 
+def _fold(text: str) -> str:
+    """NFKC + lowercase for matching.
+
+    NFKC maps full-width Latin ("ＢＴＣ") to ASCII and the precomposed Thai
+    sara am (U+0E33) to nikhahit + sara aa, so the two spellings sources use
+    produce the same tokens and trigrams.
+    """
+    return unicodedata.normalize("NFKC", text).lower()
+
+
 def _title_tokens(title: str) -> set[str]:
     """Latin/digit words; Thai has no word spaces, so see ``_thai_ngrams``."""
-    return {t for t in re.split(r"[^a-z0-9]+", title.lower()) if t}
+    return {t for t in re.split(r"[^a-z0-9]+", _fold(title)) if t}
 
 
 def _thai_ngrams(title: str) -> set[str]:
@@ -298,7 +309,7 @@ def _thai_ngrams(title: str) -> set[str]:
     compared. All Thai characters are joined (spacing and punctuation vary
     between sources) and split into overlapping trigrams.
     """
-    thai = "".join(_THAI_CHARS.findall(title))
+    thai = "".join(_THAI_CHARS.findall(_fold(title)))
     if not thai:
         return set()
     if len(thai) <= _THAI_NGRAM:
@@ -406,7 +417,7 @@ def _has_keyword(text: str, keyword: str) -> bool:
 
 def categorize_opportunity(opportunity: dict[str, Any]) -> str:
     # Prefer the domain-mapped category; only reclassify on strong title keywords.
-    title_lower = str(opportunity.get("title") or "").lower()
+    title_lower = _fold(str(opportunity.get("title") or ""))
     default = str(opportunity.get("category") or "trending-products")
     best_match = None
     best_count = 0
@@ -420,7 +431,7 @@ def categorize_opportunity(opportunity: dict[str, Any]) -> str:
 
 def score_opportunity(opportunity: dict[str, Any]) -> int:
     score = _safe_int(opportunity.get("trend_score"), 50)
-    title_lower = str(opportunity.get("title") or "").lower()
+    title_lower = _fold(str(opportunity.get("title") or ""))
     if _has_keyword(title_lower, "ai"):
         score += 10
     if any(

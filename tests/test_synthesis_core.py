@@ -200,5 +200,19 @@ class SynthesizeTests(unittest.TestCase):
         self.assertEqual(rows[0]["scraped_at"], "s")
 
 
+class UnicodeFoldingTests(unittest.TestCase):
+    def test_thai_sara_am_spellings_dedupe(self):
+        composed = "น้ำดื่ม"  # U+0E33 sara am
+        decomposed = "น\u0e49\u0e4d\u0e32ดื่ม"  # nikhahit + sara aa
+        self.assertTrue(fuzzy_title_match(composed, decomposed))
+
+    def test_full_width_latin_dedupes_and_scores(self):
+        self.assertTrue(fuzzy_title_match("ＢＴＣ ETF", "BTC ETF"))
+        self.assertEqual(
+            score_opportunity({"title": "ＡＩ writing tool", "trend_score": 50}),
+            score_opportunity({"title": "AI writing tool", "trend_score": 50}),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -68,3 +68,8 @@ Gold/DuckDB tests via the pinned `solo-empire-data-lake` `[lake]` extra.
   length through timing; `tests/test_refresh_token_compare.py` pins it.
 - Gold fallback `scraped_at` is UTC (was host-local, but readers treat naive
   stamps as UTC); `tests/test_projection_timestamp_utc.py`.
+- Dedupe/scoring fold titles with NFKC (`synthesis._fold`): the two Thai
+  sara am spellings (U+0E33 vs nikhahit + sara aa) produced different
+  trigrams, so "น้ำดื่ม" did not dedupe with itself from another source;
+  full-width Latin ("ＢＴＣ ETF", "ＡＩ tool") neither deduped nor got the AI /
+  money keyword boosts. `tests/test_synthesis_core.py::UnicodeFoldingTests`.
