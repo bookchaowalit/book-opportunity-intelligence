@@ -1,9 +1,8 @@
 # Upgrade Plan
 
-**Current state: 7.5/10** (pass 1: 7; pass 2: 7 -> 7.5) — clean synthesis
-consumer; CI gates every branch and builds the wheel; the 27 Gold/DuckDB tests
-now run from a standalone clone via `SOLO_EMPIRE_ROOT` + `.[lake]`, but still
-not in CI (the monorepo helpers are not public).
+**Current state: 8/10** (pass 1: 7; pass 2: 7.5; pass 3: 8) — clean synthesis
+consumer; CI gates every branch, builds the wheel and now runs all 27
+Gold/DuckDB tests via the pinned `solo-empire-data-lake` `[lake]` extra.
 
 ## Backlog
 
@@ -11,10 +10,7 @@ not in CI (the monorepo helpers are not public).
 - (none open)
 
 ### P1
-- Run the lake tests in CI: either vendor a minimal `data_lake` shim
-  (`product_adapter.default_data_lake_uri/resolve_lake_root`, `ObjectStore`,
-  `query_parquet`) under `tests/` or check out the monorepo with a read-only
-  deploy key; then add a CI job with `.[lake]`.
+- Confirm the first CI run with `.[dev,lake]` is green (84/85 locally).
 - `_title_tokens` keeps only `[a-z0-9]`, so Thai titles never fuzzy-match;
   add Thai tokenisation (e.g. character n-grams) with fixtures.
 
@@ -45,3 +41,13 @@ not in CI (the monorepo helpers are not public).
   only the opt-in e2e skips.
 - `fuzzy_title_match`: a one-word title only matches an identical title and
   multi-word titles need >= 2 shared tokens (regression test added).
+
+## Done in this pass (pass 2, continued: shared lake package)
+- `[lake]` extra now pins `solo-empire-data-lake[lake]` (archive of commit
+  `3523a62`), which provides every helper `gold.py` imports
+  (`product_adapter`, `storage.ObjectStore/StorageError`,
+  `query.query_parquet/DuckDBUnavailable`).
+- New `gold.shared_runtime_available()`; test skip guards use it.
+- CI installs `.[dev,lake]`, asserts the runtime imports, and runs the suite
+  against a scratch `SOLO_EMPIRE_DATA_LAKE_URI`. Verified locally: 84/85 with
+  the package (no `SOLO_EMPIRE_ROOT`), 58/85 + 27 clean skips without it.

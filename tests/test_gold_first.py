@@ -19,16 +19,7 @@ DOMAIN_FIXTURE_ROOT = Path(__file__).resolve().parents[1] / "fixtures" / "domain
 
 
 def _lake_deps_available() -> bool:
-    try:
-        import pyarrow  # noqa: F401
-        import duckdb  # noqa: F401
-    except ImportError:
-        return False
-    try:
-        gold.default_data_lake_uri()
-        return True
-    except Exception:
-        return False
+    return gold.shared_runtime_available()
 
 
 class SynthesisLineageTests(unittest.TestCase):
@@ -135,7 +126,7 @@ class SynthesisLineageTests(unittest.TestCase):
         )
 
 
-@unittest.skipUnless(_lake_deps_available(), "pyarrow/duckdb + monorepo data_lake required")
+@unittest.skipUnless(_lake_deps_available(), "shared data_lake runtime not installed (pip install -e '.[lake]')")
 class GoldWriteReadTests(unittest.TestCase):
     def test_write_and_read_gold_without_csv(self):
         results = fetch_all_domains(

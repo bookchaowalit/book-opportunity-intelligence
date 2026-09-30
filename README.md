@@ -199,16 +199,18 @@ RUN_LOCAL_E2E=1 PYTHONPATH=src python3 -m unittest tests.integration.test_local_
 Without `RUN_LOCAL_E2E=1` the e2e test is skipped so default CI stays offline.
 
 Lake-backed Gold/API tests (27 cases in `test_gold_first.py` and
-`test_api_free_only.py`) also skip unless `pyarrow`, `duckdb` and the parent
-monorepo `data_lake` package are importable; they do not run in standalone CI.
-A standalone clone can run them against a monorepo checkout elsewhere:
+`test_api_free_only.py`) need the shared `data_lake` runtime. The `[lake]`
+extra installs it (`solo-empire-data-lake`, pinned to a commit), so they run
+standalone and in CI; without it they skip with a reason:
 
 ```bash
 pip install -e ".[lake]"
-SOLO_EMPIRE_ROOT=/path/to/solo-empire \
-SOLO_EMPIRE_DATA_LAKE_URI=file:///tmp/opportunity-lake \
+SOLO_EMPIRE_DATA_LAKE_URI=/tmp/opportunity-lake \
 python -m unittest discover -s tests   # 84 of 85 run; only the e2e skips
 ```
+
+Inside the monorepo (or with `SOLO_EMPIRE_ROOT` set) the parent
+`infra/scripts/data_lake` helpers are used instead.
 
 Point `SOLO_EMPIRE_DATA_LAKE_URI` at a scratch directory so tests never write
 into the real lake. CI runs on every branch and also builds the sdist/wheel and

@@ -48,16 +48,7 @@ def _set_lake_uri(uri: str):
 
 
 def _lake_deps_available() -> bool:
-    try:
-        import pyarrow  # noqa: F401
-        import duckdb  # noqa: F401
-    except ImportError:
-        return False
-    try:
-        gold.default_data_lake_uri()
-        return True
-    except Exception:
-        return False
+    return gold.shared_runtime_available()
 
 
 def _seed_gold_from_domain_fixtures(
@@ -87,7 +78,7 @@ def _seed_gold_from_domain_fixtures(
     return synthesized
 
 
-@unittest.skipUnless(_lake_deps_available(), "pyarrow/duckdb + monorepo data_lake required")
+@unittest.skipUnless(_lake_deps_available(), "shared data_lake runtime not installed (pip install -e '.[lake]')")
 class StoreTests(unittest.TestCase):
     def test_gold_records_load(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -525,7 +516,7 @@ class SynthesisTests(unittest.TestCase):
         self.assertNotRegex(blob, r"(?i)api[_-]?key|bearer\s|FIRECRAWL|TEQUILA|password=")
 
 
-@unittest.skipUnless(_lake_deps_available(), "pyarrow/duckdb + monorepo data_lake required")
+@unittest.skipUnless(_lake_deps_available(), "shared data_lake runtime not installed (pip install -e '.[lake]')")
 class IngestCliTests(unittest.TestCase):
     def test_fixture_mode_writes_gold_and_csv_without_network(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -629,7 +620,7 @@ class IngestCliTests(unittest.TestCase):
             self.assertNotIn("TELEGRAM_TRADING_BOT_TOKEN", src)
 
 
-@unittest.skipUnless(_lake_deps_available(), "pyarrow/duckdb + monorepo data_lake required")
+@unittest.skipUnless(_lake_deps_available(), "shared data_lake runtime not installed (pip install -e '.[lake]')")
 class ApiContractTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

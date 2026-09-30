@@ -73,6 +73,22 @@ def _load_shared():
     return pa, ObjectStore, StorageError, query_parquet, DuckDBUnavailable
 
 
+def shared_runtime_available() -> bool:
+    """Return True when the shared ``data_lake`` runtime and its deps import.
+
+    Covers the installed ``[lake]`` extra (``solo-empire-data-lake`` with
+    pyarrow/duckdb) and the ``SOLO_EMPIRE_ROOT`` / parent-checkout fallback.
+    """
+    try:
+        import duckdb  # noqa: F401
+        import pyarrow  # noqa: F401
+
+        _load_shared()
+    except ImportError:
+        return False
+    return True
+
+
 class GoldUnavailable(RuntimeError):
     pass
 
