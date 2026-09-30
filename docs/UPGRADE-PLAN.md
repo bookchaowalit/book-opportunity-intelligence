@@ -73,3 +73,4 @@ Gold/DuckDB tests via the pinned `solo-empire-data-lake` `[lake]` extra.
   trigrams, so "น้ำดื่ม" did not dedupe with itself from another source;
   full-width Latin ("ＢＴＣ ETF", "ＡＩ tool") neither deduped nor got the AI /
   money keyword boosts. `tests/test_synthesis_core.py::UnicodeFoldingTests`.
+- Bumped the `[lake]` pin `3523a62` -> `4c24c66` (NDJSON/BOM/U+2028/double-decode fixes); 91 passed / 1 opt-in skip with the new package; ruff 0.15.8 + 0.16.9 `--select F` clean.
