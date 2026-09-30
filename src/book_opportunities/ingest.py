@@ -16,7 +16,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -88,7 +88,8 @@ def write_gold_from_synthesis(
     if items:
         scraped_at = str(items[0].get("scraped_at") or "")
     if not scraped_at:
-        scraped_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # UTC: naive stamps are read back as UTC by the shared product_store.
+        scraped_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     input_summary = list(synthesized.get("input_summary") or [])
     data_status = str(synthesized.get("data_status") or "ok")
     uri = data_lake_uri or gold.default_data_lake_uri()

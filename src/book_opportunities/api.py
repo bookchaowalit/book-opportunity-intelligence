@@ -5,6 +5,7 @@ Bind defaults to 127.0.0.1. POST /v1/refresh is disabled by default (403).
 """
 from __future__ import annotations
 
+import hmac
 import json
 import re
 import sys
@@ -60,6 +61,18 @@ def _query_int(qs: dict[str, list[str]], name: str, default: int) -> int:
         return int(raw)
     except ValueError:
         return default
+
+
+def _refresh_token_ok(token: str) -> bool:
+    """Constant-time comparison of a bearer token with ``REFRESH_TOKEN``.
+
+    ``==`` returns at the first differing character, which leaks how much of
+    the secret a guess got right through response timing.
+    """
+    expected = config.REFRESH_TOKEN or ""
+    if not expected or not token:
+        return False
+    return hmac.compare_digest(token.encode("utf-8"), expected.encode("utf-8"))
 
 
 class DataProductHandler(BaseHTTPRequestHandler):
@@ -239,7 +252,7 @@ class DataProductHandler(BaseHTTPRequestHandler):
             config.ALLOW_REFRESH
             and bool(config.REFRESH_TOKEN)
             and token
-            and token == config.REFRESH_TOKEN
+            and _refresh_token_ok(token)
         )
         if not allowed:
             return _json_response(

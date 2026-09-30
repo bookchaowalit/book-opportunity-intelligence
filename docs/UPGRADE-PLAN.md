@@ -63,3 +63,8 @@ Gold/DuckDB tests via the pinned `solo-empire-data-lake` `[lake]` extra.
   contained short title, mixed Thai/Latin, Thai vs English, and a
   cross-source `deduplicate` merge. 86 passed / 1 opt-in skip (with the
   `[lake]` runtime); ruff 0.15.8 and 0.16.9 `--select F` clean.
+- Refresh auth: `/v1/refresh` compares the bearer token with `hmac.compare_digest`
+  (`_refresh_token_ok`) instead of `==`, which leaked the matching prefix
+  length through timing; `tests/test_refresh_token_compare.py` pins it.
+- Gold fallback `scraped_at` is UTC (was host-local, but readers treat naive
+  stamps as UTC); `tests/test_projection_timestamp_utc.py`.
