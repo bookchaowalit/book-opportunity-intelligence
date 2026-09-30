@@ -122,6 +122,31 @@ class DedupeTests(unittest.TestCase):
         self.assertFalse(fuzzy_title_match("AI tools", "AI regulation in Thailand"))
         self.assertTrue(fuzzy_title_match("Cheap flights BKK Tokyo", "cheap flights bkk tokyo deal"))
 
+    def test_fuzzy_title_match_handles_thai_without_word_spaces(self) -> None:
+        # Same Thai title with different spacing / punctuation from two sources.
+        self.assertTrue(fuzzy_title_match("ทุนการศึกษาปริญญาโท ญี่ปุ่น 2026", "ทุนการศึกษาปริญญาโทญี่ปุ่น - 2026"))
+        # Small edit (one appended word) still merges.
+        self.assertTrue(fuzzy_title_match("เปิดรับสมัครทุนการศึกษาปริญญาโทญี่ปุ่น", "เปิดรับสมัครทุนการศึกษาปริญญาโทญี่ปุ่นล่าสุด"))
+        # Different opportunities that only share a common word do not merge.
+        self.assertFalse(fuzzy_title_match("ทุนการศึกษาปริญญาโทญี่ปุ่น", "ทุนวิจัยสตาร์ทอัพเกาหลี"))
+        # A short title contained in a longer one is not a duplicate.
+        self.assertFalse(fuzzy_title_match("บิตคอยน์", "ราคาบิตคอยน์วันนี้พุ่งทำสถิติใหม่"))
+        self.assertTrue(fuzzy_title_match("บิตคอยน์", "บิต คอยน์"))
+        # Mixed Thai/Latin titles use both token kinds; Thai vs English never merge.
+        self.assertTrue(fuzzy_title_match("โปรโมชั่น AIS 5G ใหม่", "โปรโมชั่นAIS 5G ใหม่!"))
+        self.assertFalse(fuzzy_title_match("บิตคอยน์", "Bitcoin"))
+        self.assertFalse(fuzzy_title_match("ก", "ข"))
+
+    def test_deduplicate_merges_thai_duplicates_across_sources(self) -> None:
+        rows = [
+            {"url": "https://a.example/1", "title": "ทุนการศึกษาปริญญาโท ญี่ปุ่น 2026", "trend_score": 60, "source": "a"},
+            {"url": "https://b.example/9", "title": "ทุนการศึกษาปริญญาโทญี่ปุ่น 2026", "trend_score": 70, "source": "b"},
+            {"url": "https://c.example/3", "title": "ทุนวิจัยสตาร์ทอัพเกาหลี", "trend_score": 50, "source": "c"},
+        ]
+        merged = deduplicate(rows)
+        self.assertEqual(len(merged), 2)
+        self.assertEqual(merged[0]["source"], "b")
+
     def test_same_url_keeps_higher_score_and_boosts(self) -> None:
         rows = [
             {"title": "One", "url": "u", "trend_score": 40, "source": "a"},

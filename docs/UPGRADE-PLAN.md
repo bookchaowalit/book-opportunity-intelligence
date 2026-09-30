@@ -1,6 +1,6 @@
 # Upgrade Plan
 
-**Current state: 8/10** (pass 1: 7; pass 2: 7.5; pass 3: 8) — clean synthesis
+**Current state: 8.5/10** (pass 1: 7; pass 2: 7.5; pass 3: 8; pass 4: 8.5) — clean synthesis
 consumer; CI gates every branch, builds the wheel and now runs all 27
 Gold/DuckDB tests via the pinned `solo-empire-data-lake` `[lake]` extra.
 
@@ -11,8 +11,8 @@ Gold/DuckDB tests via the pinned `solo-empire-data-lake` `[lake]` extra.
 
 ### P1
 - Confirm the first CI run with `.[dev,lake]` is green (84/85 locally).
-- `_title_tokens` keeps only `[a-z0-9]`, so Thai titles never fuzzy-match;
-  add Thai tokenisation (e.g. character n-grams) with fixtures.
+- Replay a real multi-source Thai capture through `deduplicate` and tune the
+  Thai trigram threshold (0.6 over the larger set) if it over/under-merges.
 
 ### P2
 - `synthesize()` has a dead branch (`failed_states` partial → "ok" twice);
@@ -51,3 +51,15 @@ Gold/DuckDB tests via the pinned `solo-empire-data-lake` `[lake]` extra.
 - CI installs `.[dev,lake]`, asserts the runtime imports, and runs the suite
   against a scratch `SOLO_EMPIRE_DATA_LAKE_URI`. Verified locally: 84/85 with
   the package (no `SOLO_EMPIRE_ROOT`), 58/85 + 27 clean skips without it.
+
+## Done in this pass (pass 4)
+- Thai fuzzy dedupe: `_title_tokens` kept only `[a-z0-9]`, so Thai titles
+  (no word spaces) never matched. New `_thai_ngrams` joins a title's Thai
+  characters (spacing/punctuation ignored) into character trigrams; Thai or
+  mixed titles compare trigram + Latin/digit sets against the larger set
+  (>= 2 shared, ratio >= 0.6), so a short title inside a long one does not
+  merge. Pure Latin titles keep the old rule unchanged.
+- Tests: spacing/punctuation variants, appended word, shared common word,
+  contained short title, mixed Thai/Latin, Thai vs English, and a
+  cross-source `deduplicate` merge. 86 passed / 1 opt-in skip (with the
+  `[lake]` runtime); ruff 0.15.8 and 0.16.9 `--select F` clean.

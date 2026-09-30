@@ -282,11 +282,42 @@ def normalize_domain_results(results: Iterable[DomainLoadResult]) -> list[dict[s
     return candidates
 
 
+_THAI_CHARS = re.compile(r"[\u0e00-\u0e7f]+")
+_THAI_NGRAM = 3
+
+
 def _title_tokens(title: str) -> set[str]:
+    """Latin/digit words; Thai has no word spaces, so see ``_thai_ngrams``."""
     return {t for t in re.split(r"[^a-z0-9]+", title.lower()) if t}
 
 
+def _thai_ngrams(title: str) -> set[str]:
+    """Character trigrams of the title's Thai text, ignoring spacing.
+
+    Thai is written without spaces between words, so word tokens cannot be
+    compared. All Thai characters are joined (spacing and punctuation vary
+    between sources) and split into overlapping trigrams.
+    """
+    thai = "".join(_THAI_CHARS.findall(title))
+    if not thai:
+        return set()
+    if len(thai) <= _THAI_NGRAM:
+        return {"th:" + thai}
+    return {"th:" + thai[i : i + _THAI_NGRAM] for i in range(len(thai) - _THAI_NGRAM + 1)}
+
+
 def fuzzy_title_match(title_a: str, title_b: str, threshold: float = 0.6) -> bool:
+    thai_a = _thai_ngrams(title_a)
+    thai_b = _thai_ngrams(title_b)
+    if thai_a or thai_b:
+        # Thai (or mixed) titles: compare trigram + Latin/digit token sets
+        # against the LARGER set. Unlike the Latin rule below there is no
+        # word count to guard against a short title contained in a long one
+        # ("บิตคอยน์" vs "ราคาบิตคอยน์วันนี้"), so both must overlap mostly.
+        grams_a = thai_a | _title_tokens(title_a)
+        grams_b = thai_b | _title_tokens(title_b)
+        shared = len(grams_a & grams_b)
+        return shared >= 2 and shared / max(len(grams_a), len(grams_b)) >= threshold
     words_a = _title_tokens(title_a)
     words_b = _title_tokens(title_b)
     if not words_a or not words_b:
