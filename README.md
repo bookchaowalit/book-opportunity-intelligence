@@ -177,6 +177,7 @@ Coverage includes:
 - `opportunity.v1` synthesis output
 - deterministic ranking and deduplication
 - stale / empty / timeout / unavailable domain inputs
+- untrusted numeric inputs (NaN / Infinity / garbage) never crash scoring
 - GET-only API contract and blocked `POST /v1/refresh`
 - no secret or raw provider error leakage
 
@@ -196,6 +197,10 @@ RUN_LOCAL_E2E=1 PYTHONPATH=src python3 -m unittest tests.integration.test_local_
 ```
 
 Without `RUN_LOCAL_E2E=1` the e2e test is skipped so default CI stays offline.
+
+Lake-backed Gold/API tests (27 cases in `test_gold_first.py` and
+`test_api_free_only.py`) also skip unless `pyarrow`, `duckdb` and the parent
+monorepo `data_lake` package are importable; they do not run in standalone CI.
 
 Startup map:
 
