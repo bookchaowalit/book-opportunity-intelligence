@@ -10,7 +10,9 @@ Gold/DuckDB tests via the pinned `solo-empire-data-lake` `[lake]` extra.
 - (none open)
 
 ### P1
-- Confirm the first CI run with `.[dev,lake]` is green (84/85 locally).
+- Confirm the CI run with `.[dev,lake]` is green (locally 91 passed, 1 skipped). The last
+  branch runs ended within ~5 s with no job logs (runner never started, not a test failure);
+  re-run once runners start.
 - Replay a real multi-source Thai capture through `deduplicate` and tune the
   Thai trigram threshold (0.6 over the larger set) if it over/under-merges.
 
@@ -18,6 +20,8 @@ Gold/DuckDB tests via the pinned `solo-empire-data-lake` `[lake]` extra.
 - `synthesize()` has a dead branch (`failed_states` partial → "ok" twice);
   decide whether partial outages should surface as `partial`.
 - Type-check `src/` with `mypy --strict` or `pyright` in CI.
+- Default `API_PORT` 8108 collides with `book-news-scraping`'s `news.v1` API (also 8108);
+  pick one free port in the parent port registry and update both READMEs.
 
 ## Done in this pass (pass 1, 2026-09-30)
 - Input hardening: `_safe_float` rejects NaN/Infinity/bools (a NaN
