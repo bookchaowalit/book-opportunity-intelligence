@@ -7,7 +7,9 @@ Does not scrape upstream sources. Does not perform external writes.
 from __future__ import annotations
 
 import hashlib
+import math
 import re
+import unicodedata
 from datetime import datetime, timezone
 from typing import Any, Iterable, Optional
 
@@ -81,12 +83,18 @@ def utc_now_stamp() -> str:
 
 
 def _safe_float(value: Any, default: float = 0.0) -> float:
+    """Parse a domain value as a finite float; NaN/inf/garbage -> default.
+
+    Domain APIs are untrusted input: a NaN or Infinity (valid in Python's JSON
+    decoder) would otherwise crash ``int(abs(x) * k)`` in the scorers.
+    """
     try:
-        if value is None or value == "":
+        if value is None or value == "" or isinstance(value, bool):
             return default
-        return float(value)
+        result = float(value)
     except (TypeError, ValueError):
         return default
+    return result if math.isfinite(result) else default
 
 
 def _safe_int(value: Any, default: int = 0) -> int:
@@ -94,7 +102,7 @@ def _safe_int(value: Any, default: int = 0) -> int:
         if value is None or value == "":
             return default
         return int(float(value))
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return default
 
 
@@ -275,17 +283,63 @@ def normalize_domain_results(results: Iterable[DomainLoadResult]) -> list[dict[s
     return candidates
 
 
+_THAI_CHARS = re.compile(r"[\u0e00-\u0e7f]+")
+_THAI_NGRAM = 3
+
+
+def _fold(text: str) -> str:
+    """NFKC + lowercase for matching.
+
+    NFKC maps full-width Latin ("ＢＴＣ") to ASCII and the precomposed Thai
+    sara am (U+0E33) to nikhahit + sara aa, so the two spellings sources use
+    produce the same tokens and trigrams.
+    """
+    return unicodedata.normalize("NFKC", text).lower()
+
+
 def _title_tokens(title: str) -> set[str]:
-    return {t for t in re.split(r"[^a-z0-9]+", title.lower()) if t}
+    """Latin/digit words; Thai has no word spaces, so see ``_thai_ngrams``."""
+    return {t for t in re.split(r"[^a-z0-9]+", _fold(title)) if t}
+
+
+def _thai_ngrams(title: str) -> set[str]:
+    """Character trigrams of the title's Thai text, ignoring spacing.
+
+    Thai is written without spaces between words, so word tokens cannot be
+    compared. All Thai characters are joined (spacing and punctuation vary
+    between sources) and split into overlapping trigrams.
+    """
+    thai = "".join(_THAI_CHARS.findall(_fold(title)))
+    if not thai:
+        return set()
+    if len(thai) <= _THAI_NGRAM:
+        return {"th:" + thai}
+    return {"th:" + thai[i : i + _THAI_NGRAM] for i in range(len(thai) - _THAI_NGRAM + 1)}
 
 
 def fuzzy_title_match(title_a: str, title_b: str, threshold: float = 0.6) -> bool:
+    thai_a = _thai_ngrams(title_a)
+    thai_b = _thai_ngrams(title_b)
+    if thai_a or thai_b:
+        # Thai (or mixed) titles: compare trigram + Latin/digit token sets
+        # against the LARGER set. Unlike the Latin rule below there is no
+        # word count to guard against a short title contained in a long one
+        # ("บิตคอยน์" vs "ราคาบิตคอยน์วันนี้"), so both must overlap mostly.
+        grams_a = thai_a | _title_tokens(title_a)
+        grams_b = thai_b | _title_tokens(title_b)
+        shared = len(grams_a & grams_b)
+        return shared >= 2 and shared / max(len(grams_a), len(grams_b)) >= threshold
     words_a = _title_tokens(title_a)
     words_b = _title_tokens(title_b)
     if not words_a or not words_b:
         return False
-    overlap = len(words_a & words_b) / min(len(words_a), len(words_b))
-    return overlap >= threshold
+    shared = len(words_a & words_b)
+    shorter = min(len(words_a), len(words_b))
+    if shorter == 1:
+        # A one-word title ("Bitcoin") used to merge with any title containing
+        # that word; only an identical one-word title is a duplicate now.
+        return words_a == words_b
+    return shared >= 2 and shared / shorter >= threshold
 
 
 def deduplicate(opportunities: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -307,7 +361,7 @@ def deduplicate(opportunities: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     break
         if url_match is not None:
             existing = merged[url_match]
-            if int(opp.get("trend_score") or 0) > int(existing.get("trend_score") or 0):
+            if _safe_int(opp.get("trend_score")) > _safe_int(existing.get("trend_score")):
                 old_source = existing.get("source")
                 merged[url_match] = dict(opp)
                 merged[url_match]["notes"] = (
@@ -319,7 +373,7 @@ def deduplicate(opportunities: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     f"{existing.get('notes', '')}"
                 )[:240]
             merged[url_match]["trend_score"] = min(
-                100, int(merged[url_match].get("trend_score") or 0) + 3
+                100, _safe_int(merged[url_match].get("trend_score")) + 3
             )
             continue
 
@@ -330,7 +384,7 @@ def deduplicate(opportunities: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 break
         if title_match is not None:
             existing = merged[title_match]
-            if int(opp.get("trend_score") or 0) > int(existing.get("trend_score") or 0):
+            if _safe_int(opp.get("trend_score")) > _safe_int(existing.get("trend_score")):
                 old_source = existing.get("source")
                 merged[title_match] = dict(opp)
                 merged[title_match]["notes"] = (
@@ -342,7 +396,7 @@ def deduplicate(opportunities: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     f"{existing.get('notes', '')}"
                 )[:240]
             merged[title_match]["trend_score"] = min(
-                100, int(merged[title_match].get("trend_score") or 0) + 3
+                100, _safe_int(merged[title_match].get("trend_score")) + 3
             )
             continue
 
@@ -363,7 +417,7 @@ def _has_keyword(text: str, keyword: str) -> bool:
 
 def categorize_opportunity(opportunity: dict[str, Any]) -> str:
     # Prefer the domain-mapped category; only reclassify on strong title keywords.
-    title_lower = str(opportunity.get("title") or "").lower()
+    title_lower = _fold(str(opportunity.get("title") or ""))
     default = str(opportunity.get("category") or "trending-products")
     best_match = None
     best_count = 0
@@ -376,8 +430,8 @@ def categorize_opportunity(opportunity: dict[str, Any]) -> str:
 
 
 def score_opportunity(opportunity: dict[str, Any]) -> int:
-    score = int(opportunity.get("trend_score") or 50)
-    title_lower = str(opportunity.get("title") or "").lower()
+    score = _safe_int(opportunity.get("trend_score"), 50)
+    title_lower = _fold(str(opportunity.get("title") or ""))
     if _has_keyword(title_lower, "ai"):
         score += 10
     if any(
@@ -399,7 +453,7 @@ def rank_opportunities(opportunities: list[dict[str, Any]]) -> list[dict[str, An
     return sorted(
         opportunities,
         key=lambda o: (
-            -int(o.get("trend_score") or 0),
+            -_safe_int(o.get("trend_score")),
             str(o.get("title") or ""),
             str(o.get("url") or ""),
         ),

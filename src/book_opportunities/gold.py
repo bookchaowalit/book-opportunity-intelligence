@@ -46,10 +46,23 @@ GOLD_COLUMNS = (
 )
 
 
-def _load_shared():
+def _shared_scripts_candidates() -> list[Path]:
+    """Where the monorepo ``infra/scripts/data_lake`` helpers may live.
+
+    ``SOLO_EMPIRE_ROOT`` wins, so a standalone clone (not nested inside the
+    monorepo) can still use the shared lake helpers; otherwise walk up from
+    this project as before.
+    """
+    candidates: list[Path] = []
+    if config.SOLO_EMPIRE_ROOT:
+        candidates.append(Path(config.SOLO_EMPIRE_ROOT).expanduser() / "infra" / "scripts")
     cur = config.PROJECT_ROOT.resolve()
-    for parent in [cur, *cur.parents]:
-        scripts = parent / "infra" / "scripts"
+    candidates.extend(parent / "infra" / "scripts" for parent in [cur, *cur.parents])
+    return candidates
+
+
+def _load_shared():
+    for scripts in _shared_scripts_candidates():
         if (scripts / "data_lake" / "product_adapter.py").is_file():
             if str(scripts) not in sys.path:
                 sys.path.insert(0, str(scripts))
@@ -58,6 +71,22 @@ def _load_shared():
     from data_lake.storage import ObjectStore, StorageError  # type: ignore
     from data_lake.query import query_parquet, DuckDBUnavailable  # type: ignore
     return pa, ObjectStore, StorageError, query_parquet, DuckDBUnavailable
+
+
+def shared_runtime_available() -> bool:
+    """Return True when the shared ``data_lake`` runtime and its deps import.
+
+    Covers the installed ``[lake]`` extra (``solo-empire-data-lake`` with
+    pyarrow/duckdb) and the ``SOLO_EMPIRE_ROOT`` / parent-checkout fallback.
+    """
+    try:
+        import duckdb  # noqa: F401
+        import pyarrow  # noqa: F401
+
+        _load_shared()
+    except ImportError:
+        return False
+    return True
 
 
 class GoldUnavailable(RuntimeError):
