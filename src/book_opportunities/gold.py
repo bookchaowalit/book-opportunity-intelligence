@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import importlib.util
 import sys
 import tempfile
 from datetime import datetime, timezone
@@ -46,27 +47,25 @@ GOLD_COLUMNS = (
 )
 
 
-def _shared_scripts_candidates() -> list[Path]:
-    """Where the monorepo ``infra/scripts/data_lake`` helpers may live.
+def _use_sibling_runtime() -> None:
+    """Put a solo-data-lake checkout (``SOLO_DATA_LAKE_ROOT``) on ``sys.path``.
 
-    ``SOLO_EMPIRE_ROOT`` wins, so a standalone clone (not nested inside the
-    monorepo) can still use the shared lake helpers; otherwise walk up from
-    this project as before.
+    Only used when the ``solo-empire-data-lake`` package is not installed.
     """
-    candidates: list[Path] = []
-    if config.SOLO_EMPIRE_ROOT:
-        candidates.append(Path(config.SOLO_EMPIRE_ROOT).expanduser() / "infra" / "scripts")
-    cur = config.PROJECT_ROOT.resolve()
-    candidates.extend(parent / "infra" / "scripts" for parent in [cur, *cur.parents])
-    return candidates
+    root = config.SOLO_DATA_LAKE_ROOT.strip()
+    if not root or importlib.util.find_spec("data_lake") is not None:
+        return
+    scripts = Path(root).expanduser().resolve() / "infra" / "scripts"
+    if not (scripts / "data_lake" / "product_adapter.py").is_file():
+        raise ImportError(
+            f"SOLO_DATA_LAKE_ROOT={root} has no infra/scripts/data_lake/product_adapter.py"
+        )
+    if str(scripts) not in sys.path:
+        sys.path.insert(0, str(scripts))
 
 
 def _load_shared():
-    for scripts in _shared_scripts_candidates():
-        if (scripts / "data_lake" / "product_adapter.py").is_file():
-            if str(scripts) not in sys.path:
-                sys.path.insert(0, str(scripts))
-            break
+    _use_sibling_runtime()
     from data_lake import product_adapter as pa  # type: ignore
     from data_lake.storage import ObjectStore, StorageError  # type: ignore
     from data_lake.query import query_parquet, DuckDBUnavailable  # type: ignore
@@ -77,7 +76,7 @@ def shared_runtime_available() -> bool:
     """Return True when the shared ``data_lake`` runtime and its deps import.
 
     Covers the installed ``[lake]`` extra (``solo-empire-data-lake`` with
-    pyarrow/duckdb) and the ``SOLO_EMPIRE_ROOT`` / parent-checkout fallback.
+    pyarrow/duckdb) and the ``SOLO_DATA_LAKE_ROOT`` sibling-checkout fallback.
     """
     try:
         import duckdb  # noqa: F401
@@ -114,7 +113,6 @@ def default_data_lake_uri() -> str:
     return pa.default_data_lake_uri(
         data_lake_uri=config.DATA_LAKE_URI,
         project_root=config.PROJECT_ROOT,
-        solo_empire_root=config.SOLO_EMPIRE_ROOT,
     )
 
 

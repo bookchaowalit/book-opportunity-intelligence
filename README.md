@@ -209,8 +209,8 @@ SOLO_EMPIRE_DATA_LAKE_URI=/tmp/opportunity-lake \
 python -m unittest discover -s tests   # 84 of 85 run; only the e2e skips
 ```
 
-Inside the monorepo (or with `SOLO_EMPIRE_ROOT` set) the parent
-`infra/scripts/data_lake` helpers are used instead.
+Without the package, `SOLO_DATA_LAKE_ROOT` may point at a solo-data-lake
+checkout whose `infra/scripts/data_lake` helpers are used instead.
 
 Point `SOLO_EMPIRE_DATA_LAKE_URI` at a scratch directory so tests never write
 into the real lake. CI runs on every branch and also builds the sdist/wheel and

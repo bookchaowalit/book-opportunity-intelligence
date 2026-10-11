@@ -36,7 +36,7 @@ DATA_LAKE_URI = os.environ.get(
     "SOLO_EMPIRE_DATA_LAKE_URI",
     os.environ.get("DATA_LAKE_URI", ""),
 )
-SOLO_EMPIRE_ROOT = os.environ.get("SOLO_EMPIRE_ROOT", "")
+SOLO_DATA_LAKE_ROOT = os.environ.get("SOLO_DATA_LAKE_ROOT", "")
 
 # This product's own API (synthesis output)
 API_HOST = os.environ.get("API_HOST", "127.0.0.1")

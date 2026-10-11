@@ -40,7 +40,7 @@ Gold/DuckDB tests via the pinned `solo-empire-data-lake` `[lake]` extra.
   `.[dev]`, builds sdist + wheel and imports the installed wheel.
 - `pyproject.toml`: explicit setuptools build-system, `src/` package
   discovery, `lake` (pyarrow, duckdb) and `dev` extras.
-- `gold._load_shared` honours `SOLO_EMPIRE_ROOT`, so a standalone clone can
+- `gold._load_shared` honours `SOLO_DATA_LAKE_ROOT`, so a standalone clone can
   use the monorepo lake helpers; verified locally: 84/85 tests run (was 57),
   only the opt-in e2e skips.
 - `fuzzy_title_match`: a one-word title only matches an identical title and
@@ -54,7 +54,7 @@ Gold/DuckDB tests via the pinned `solo-empire-data-lake` `[lake]` extra.
 - New `gold.shared_runtime_available()`; test skip guards use it.
 - CI installs `.[dev,lake]`, asserts the runtime imports, and runs the suite
   against a scratch `SOLO_EMPIRE_DATA_LAKE_URI`. Verified locally: 84/85 with
-  the package (no `SOLO_EMPIRE_ROOT`), 58/85 + 27 clean skips without it.
+  the package (no `SOLO_DATA_LAKE_ROOT`), 58/85 + 27 clean skips without it.
 
 ## Done in this pass (pass 4)
 - Thai fuzzy dedupe: `_title_tokens` kept only `[a-z0-9]`, so Thai titles
