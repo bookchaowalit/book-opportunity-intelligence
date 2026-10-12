@@ -48,7 +48,7 @@ GOLD_COLUMNS = (
 
 
 def _use_sibling_runtime() -> None:
-    """Put a solo-data-lake checkout (``SOLO_DATA_LAKE_ROOT``) on ``sys.path``.
+    """Put a data-lake checkout (``SOLO_DATA_LAKE_ROOT``) on ``sys.path``.
 
     Only used when the ``solo-empire-data-lake`` package is not installed.
     """

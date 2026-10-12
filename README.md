@@ -209,7 +209,7 @@ SOLO_EMPIRE_DATA_LAKE_URI=/tmp/opportunity-lake \
 python -m unittest discover -s tests   # 84 of 85 run; only the e2e skips
 ```
 
-Without the package, `SOLO_DATA_LAKE_ROOT` may point at a solo-data-lake
+Without the package, `SOLO_DATA_LAKE_ROOT` may point at a data-lake
 checkout whose `infra/scripts/data_lake` helpers are used instead.
 
 Point `SOLO_EMPIRE_DATA_LAKE_URI` at a scratch directory so tests never write
