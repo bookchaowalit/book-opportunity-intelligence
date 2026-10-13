@@ -1,6 +1,6 @@
 # book-opportunity-intelligence — Product brief
 
-**Slug:** `bookchaowalit/book-opportunity-intelligence`  
+**Slug:** `bookchaowalit/opportunity-intelligence-data`  
 **Generated:** 2026-08-11 (bulk Book Dev closeout)  
 **Status:** starter / portfolio boundary
 
