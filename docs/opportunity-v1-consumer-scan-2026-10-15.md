@@ -60,3 +60,23 @@ manual synthesis service with a different domain contract is not an obvious
 compatibility-preserving change, so its disposition and registry cleanup are
 left to the owner before declaring full retirement. This scan does not change
 runtime behavior or authorize publication, collection or an archive action.
+
+## Follow-up disposition — 2026-10-15 (BOO-248)
+
+- `scripts/start_local_data_apis.py` (the manual self-launcher) and the opt-in
+  `tests/integration/test_local_e2e_smoke.py` are **removed**. Both depended on
+  sibling checkouts named `book-crypto-data` … `book-ai-tools-data` that no
+  longer exist, so they could not run; they were the last in-repo orchestration
+  that started this producer alongside the domain APIs.
+- The superseded `data-product-contracts-v1.yaml` rows for the `opportunities`
+  synthesis and its Track A consumers are annotated as retired in the registry
+  owners (`data-lake-pipelines`, `architecture-docs`); values stay unchanged per
+  the versioning policy. The active `data-product-contracts-v2.yaml` already
+  excludes the synthesis.
+- What remains is this repository's own producer runtime (`book_opportunities`
+  package, its two installed entry points and `config.py` defining
+  `opportunity.v1` on 8108). That is the producer itself, not a consumer; it is
+  removed only when the repository is archived, which this change does not do.
+- A rescan of the local checkouts after the change found no runtime caller of
+  `opportunity.v1` / `book_opportunities` / `opportunity_client` outside this
+  repository; see the sprint evidence `BOO-248-rescan.json`.
