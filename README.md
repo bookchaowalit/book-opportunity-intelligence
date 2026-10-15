@@ -22,15 +22,15 @@ providers, no external writes (Todoist/Telegram), no public deployment by defaul
 
 ## Domain inputs (read-only)
 
-| Domain | Port | Schema | Repository |
+| Domain | Port | Schema | Original repository (current owner) |
 |---|---|---|---|
-| Crypto | 8101 | `crypto.v1` | `book-crypto-data` |
-| Stocks | 8102 | `stock.v1` | `book-stock-data` |
-| FX | 8103 | `fx.v1` | `book-fx-data` |
-| DeFi | 8104 | `defi.v1` | `book-defi-data` |
-| Flights | 8105 | `flight.v1` | `book-flight-data` |
-| SEO | 8106 | `seo.v1` | `book-seo-data` |
-| AI Tools | 8107 | `ai_tools.v1` | `book-ai-tools-data` |
+| Crypto | 8101 | `crypto.v1` | `book-crypto-data` (now `market-data`, `sources/crypto`) |
+| Stocks | 8102 | `stock.v1` | `book-stock-data` (now `market-data`, `sources/stock`) |
+| FX | 8103 | `fx.v1` | `book-fx-data` (now `market-data`, `sources/fx`) |
+| DeFi | 8104 | `defi.v1` | `book-defi-data` (now `market-data`, `sources/defi`) |
+| Flights | 8105 | `flight.v1` | `book-flight-data` (now `travel-flight-price-data`) |
+| SEO | 8106 | `seo.v1` | `book-seo-data` (now `marketing-seo-ranking-data`) |
+| AI Tools | 8107 | `ai_tools.v1` | `book-ai-tools-data` (now `tech-ai-tools-data`) |
 
 Only `GET /v1/records` is used. No `POST /v1/refresh` against domain APIs.
 When a domain API is down, timed out, empty, or stale, synthesis continues
