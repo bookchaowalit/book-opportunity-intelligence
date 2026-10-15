@@ -22,15 +22,15 @@ providers, no external writes (Todoist/Telegram), no public deployment by defaul
 
 ## Domain inputs (read-only)
 
-| Domain | Port | Schema | Repository |
+| Domain | Port | Schema | Original repository (current owner) |
 |---|---|---|---|
-| Crypto | 8101 | `crypto.v1` | `book-crypto-data` |
-| Stocks | 8102 | `stock.v1` | `book-stock-data` |
-| FX | 8103 | `fx.v1` | `book-fx-data` |
-| DeFi | 8104 | `defi.v1` | `book-defi-data` |
-| Flights | 8105 | `flight.v1` | `book-flight-data` |
-| SEO | 8106 | `seo.v1` | `book-seo-data` |
-| AI Tools | 8107 | `ai_tools.v1` | `book-ai-tools-data` |
+| Crypto | 8101 | `crypto.v1` | `book-crypto-data` (now `market-data`, `sources/crypto`) |
+| Stocks | 8102 | `stock.v1` | `book-stock-data` (now `market-data`, `sources/stock`) |
+| FX | 8103 | `fx.v1` | `book-fx-data` (now `market-data`, `sources/fx`) |
+| DeFi | 8104 | `defi.v1` | `book-defi-data` (now `market-data`, `sources/defi`) |
+| Flights | 8105 | `flight.v1` | `book-flight-data` (now `travel-flight-price-data`) |
+| SEO | 8106 | `seo.v1` | `book-seo-data` (now `marketing-seo-ranking-data`) |
+| AI Tools | 8107 | `ai_tools.v1` | `book-ai-tools-data` (now `tech-ai-tools-data`) |
 
 Only `GET /v1/records` is used. No `POST /v1/refresh` against domain APIs.
 When a domain API is down, timed out, empty, or stale, synthesis continues
@@ -181,22 +181,15 @@ Coverage includes:
 - GET-only API contract and blocked `POST /v1/refresh`
 - no secret or raw provider error leakage
 
-### Opt-in local end-to-end smoke (ports 8101–8108)
+### Retired multi-API launcher and e2e (2026-10-15)
 
-Starts sibling domain APIs on `127.0.0.1:8101–8107` with **fixture/local data
-only**, runs synthesis against those live loopback APIs, serves this product on
-`:8108`, and checks contracts. Requires free ports and the seven sibling
-repositories under `../`. No paid APIs, credentials, or internet access.
-
-```bash
-# from this repository root
-RUN_LOCAL_E2E=1 PYTHONPATH=src python3 tests/integration/test_local_e2e_smoke.py
-
-# or via unittest
-RUN_LOCAL_E2E=1 PYTHONPATH=src python3 -m unittest tests.integration.test_local_e2e_smoke -v
-```
-
-Without `RUN_LOCAL_E2E=1` the e2e test is skipped so default CI stays offline.
+`scripts/start_local_data_apis.py` and the opt-in
+`tests/integration/test_local_e2e_smoke.py` started sibling repositories
+(`book-crypto-data` … `book-ai-tools-data`) that no longer exist under those
+names, and were the last in-repo callers that started this producer next to
+the domain APIs. Both were removed under BOO-248; the cross-domain synthesis is
+retired in the active `data-product-contracts-v2` registry. The unit/contract
+suite below is the supported test path.
 
 Lake-backed Gold/API tests (27 cases in `test_gold_first.py` and
 `test_api_free_only.py`) need the shared `data_lake` runtime. The `[lake]`
@@ -206,7 +199,7 @@ standalone and in CI; without it they skip with a reason:
 ```bash
 pip install -e ".[lake]"
 SOLO_EMPIRE_DATA_LAKE_URI=/tmp/opportunity-lake \
-python -m unittest discover -s tests   # 84 of 85 run; only the e2e skips
+python -m unittest discover -s tests
 ```
 
 Without the package, `SOLO_DATA_LAKE_ROOT` may point at a data-lake
@@ -215,20 +208,6 @@ checkout whose `infra/scripts/data_lake` helpers are used instead.
 Point `SOLO_EMPIRE_DATA_LAKE_URI` at a scratch directory so tests never write
 into the real lake. CI runs on every branch and also builds the sdist/wheel and
 imports the built wheel.
-
-Startup map:
-
-| Port | Process | Data |
-|---|---|---|
-| 8101–8107 | sibling `*.api` modules | each repo `fixtures/` seeded into a temp `DATA_DIR` |
-| 8108 | `book_opportunities.api` | synthesis output under a temp `data/` |
-
-The e2e runner asserts only loopback hosts are contacted, checks
-`opportunity.v1` synthesis output, verifies
-`GET /healthz|/v1/metadata|/v1/records|/v1/history` on `:8108`, expects
-`POST /v1/refresh → 403`, and terminates all child processes on exit.
-Domain HTTP uses `httpx` when installed, otherwise stdlib `urllib` for
-loopback GET.
 
 ## Safety
 
