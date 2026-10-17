@@ -1,4 +1,5 @@
 """Offline tests for synthesis consumer + free-only API contract."""
+
 from __future__ import annotations
 
 import json
@@ -58,9 +59,7 @@ def _seed_gold_from_domain_fixtures(
     synthesis_run_id: str = "test-api-run",
     scraped_at: str = "2026-08-01 12:00:00",
 ) -> dict:
-    results = fetch_all_domains(
-        use_fixtures=True, fixtures_dir=DOMAIN_FIXTURE_ROOT
-    )
+    results = fetch_all_domains(use_fixtures=True, fixtures_dir=DOMAIN_FIXTURE_ROOT)
     synthesized = synthesize(
         results,
         synthesis_run_id=synthesis_run_id,
@@ -78,7 +77,10 @@ def _seed_gold_from_domain_fixtures(
     return synthesized
 
 
-@unittest.skipUnless(_lake_deps_available(), "shared data_lake runtime not installed (pip install -e '.[lake]')")
+@unittest.skipUnless(
+    _lake_deps_available(),
+    "shared data_lake runtime not installed (pip install -e '.[lake]')",
+)
 class StoreTests(unittest.TestCase):
     def test_gold_records_load(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -86,9 +88,7 @@ class StoreTests(unittest.TestCase):
             data_dir = root / "data"
             data_dir.mkdir()
             lake_uri = str(root / "lake")
-            _seed_gold_from_domain_fixtures(
-                data_lake_uri=lake_uri, data_dir=data_dir
-            )
+            _seed_gold_from_domain_fixtures(data_lake_uri=lake_uri, data_dir=data_dir)
             with _set_data_dir(data_dir), _set_lake_uri(lake_uri):
                 payload = load_records(data_dir, data_lake_uri=lake_uri)
             self.assertEqual(payload["source_kind"], "gold_parquet")
@@ -137,12 +137,12 @@ class StoreTests(unittest.TestCase):
             data_dir = root / "data"
             data_dir.mkdir()
             lake_uri = str(root / "lake")
-            _seed_gold_from_domain_fixtures(
-                data_lake_uri=lake_uri, data_dir=data_dir
-            )
+            _seed_gold_from_domain_fixtures(data_lake_uri=lake_uri, data_dir=data_dir)
             with _set_data_dir(data_dir), _set_lake_uri(lake_uri):
                 self.assertIsNone(
-                    get_record("this-id-does-not-exist", data_dir, data_lake_uri=lake_uri)
+                    get_record(
+                        "this-id-does-not-exist", data_dir, data_lake_uri=lake_uri
+                    )
                 )
 
     def test_history_load_from_gold(self):
@@ -151,9 +151,7 @@ class StoreTests(unittest.TestCase):
             data_dir = root / "data"
             data_dir.mkdir()
             lake_uri = str(root / "lake")
-            _seed_gold_from_domain_fixtures(
-                data_lake_uri=lake_uri, data_dir=data_dir
-            )
+            _seed_gold_from_domain_fixtures(data_lake_uri=lake_uri, data_dir=data_dir)
             with _set_data_dir(data_dir), _set_lake_uri(lake_uri):
                 hist = load_history(data_dir, data_lake_uri=lake_uri)
             self.assertEqual(hist["source_kind"], "gold_parquet")
@@ -162,8 +160,9 @@ class StoreTests(unittest.TestCase):
 
 class PolicyTests(unittest.TestCase):
     def test_free_only_blocks_paid_and_writes(self):
-        with mock.patch.object(config, "FREE_ONLY", True), mock.patch.object(
-            config, "ALLOW_PAID_PROVIDERS", False
+        with (
+            mock.patch.object(config, "FREE_ONLY", True),
+            mock.patch.object(config, "ALLOW_PAID_PROVIDERS", False),
         ):
             for name in ("firecrawl", "telegram_write", "todoist_write", "paid_search"):
                 decision = policy.evaluate_provider(name)
@@ -171,8 +170,9 @@ class PolicyTests(unittest.TestCase):
                 self.assertEqual(decision.status, "blocked")
 
     def test_domain_apis_allowed(self):
-        with mock.patch.object(config, "FREE_ONLY", True), mock.patch.object(
-            config, "ALLOW_PAID_PROVIDERS", False
+        with (
+            mock.patch.object(config, "FREE_ONLY", True),
+            mock.patch.object(config, "ALLOW_PAID_PROVIDERS", False),
         ):
             for product in config.DOMAIN_PRODUCTS:
                 name = policy.domain_provider_name(product["id"])
@@ -192,8 +192,9 @@ class PolicyTests(unittest.TestCase):
             self.assertFalse(status["present"])
 
     def test_external_writes_blocked(self):
-        with mock.patch.object(config, "FREE_ONLY", True), mock.patch.object(
-            config, "ALLOW_EXTERNAL_WRITES", False
+        with (
+            mock.patch.object(config, "FREE_ONLY", True),
+            mock.patch.object(config, "ALLOW_EXTERNAL_WRITES", False),
         ):
             self.assertFalse(policy.external_writes_allowed())
             with self.assertRaises(PermissionError):
@@ -202,11 +203,14 @@ class PolicyTests(unittest.TestCase):
 
 class HttpClientTests(unittest.TestCase):
     def test_blocks_paid_provider_before_request(self):
-        with mock.patch.object(config, "FREE_ONLY", True), mock.patch.object(
-            config, "ALLOW_PAID_PROVIDERS", False
+        with (
+            mock.patch.object(config, "FREE_ONLY", True),
+            mock.patch.object(config, "ALLOW_PAID_PROVIDERS", False),
         ):
             with self.assertRaises(PermissionError):
-                request_json("GET", "http://127.0.0.1:8101/v1/records", provider="firecrawl")
+                request_json(
+                    "GET", "http://127.0.0.1:8101/v1/records", provider="firecrawl"
+                )
 
     def test_blocks_non_loopback_host(self):
         with self.assertRaises(UpstreamError) as ctx:
@@ -233,8 +237,9 @@ class HttpClientTests(unittest.TestCase):
 
         fake_httpx = mock.Mock()
         fake_httpx.request = Boom().request
-        with mock.patch("book_opportunities.http_client.httpx", fake_httpx), mock.patch.object(
-            config, "MAX_RETRIES", 0
+        with (
+            mock.patch("book_opportunities.http_client.httpx", fake_httpx),
+            mock.patch.object(config, "MAX_RETRIES", 0),
         ):
             with self.assertRaises(UpstreamError) as ctx:
                 request_json(
@@ -251,8 +256,9 @@ class HttpClientTests(unittest.TestCase):
         resp.content = b"rate limited"
         fake_httpx = mock.Mock()
         fake_httpx.request.return_value = resp
-        with mock.patch("book_opportunities.http_client.httpx", fake_httpx), mock.patch.object(
-            config, "MAX_RETRIES", 0
+        with (
+            mock.patch("book_opportunities.http_client.httpx", fake_httpx),
+            mock.patch.object(config, "MAX_RETRIES", 0),
         ):
             with self.assertRaises(UpstreamError) as ctx:
                 request_json(
@@ -281,7 +287,9 @@ class DomainClientTests(unittest.TestCase):
         self.assertEqual(calls["n"], 0)
         self.assertEqual(len(results), 7)
         self.assertTrue(all(r.source == "fixture" for r in results))
-        self.assertTrue(all(r.envelope and is_data_product_envelope(r.envelope) for r in results))
+        self.assertTrue(
+            all(r.envelope and is_data_product_envelope(r.envelope) for r in results)
+        )
         ports = sorted(r.port for r in results)
         self.assertEqual(ports, [8101, 8102, 8103, 8104, 8105, 8106, 8107])
 
@@ -513,10 +521,15 @@ class SynthesisTests(unittest.TestCase):
         self.assertEqual(out["data_status"], "stale")
         # No raw secret-looking fields
         blob = json.dumps(out)
-        self.assertNotRegex(blob, r"(?i)api[_-]?key|bearer\s|FIRECRAWL|TEQUILA|password=")
+        self.assertNotRegex(
+            blob, r"(?i)api[_-]?key|bearer\s|FIRECRAWL|TEQUILA|password="
+        )
 
 
-@unittest.skipUnless(_lake_deps_available(), "shared data_lake runtime not installed (pip install -e '.[lake]')")
+@unittest.skipUnless(
+    _lake_deps_available(),
+    "shared data_lake runtime not installed (pip install -e '.[lake]')",
+)
 class IngestCliTests(unittest.TestCase):
     def test_fixture_mode_writes_gold_and_csv_without_network(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -530,9 +543,12 @@ class IngestCliTests(unittest.TestCase):
                 calls["n"] += 1
                 raise RuntimeError("network forbidden")
 
-            with mock.patch(
-                "book_opportunities.domain_client.request_json", side_effect=boom
-            ), mock.patch.object(config, "DOMAIN_FIXTURES_DIR", DOMAIN_FIXTURE_ROOT):
+            with (
+                mock.patch(
+                    "book_opportunities.domain_client.request_json", side_effect=boom
+                ),
+                mock.patch.object(config, "DOMAIN_FIXTURES_DIR", DOMAIN_FIXTURE_ROOT),
+            ):
                 result = run_synthesis(
                     use_fixtures=True,
                     dry_run=False,
@@ -620,7 +636,10 @@ class IngestCliTests(unittest.TestCase):
             self.assertNotIn("TELEGRAM_TRADING_BOT_TOKEN", src)
 
 
-@unittest.skipUnless(_lake_deps_available(), "shared data_lake runtime not installed (pip install -e '.[lake]')")
+@unittest.skipUnless(
+    _lake_deps_available(),
+    "shared data_lake runtime not installed (pip install -e '.[lake]')",
+)
 class ApiContractTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -678,14 +697,23 @@ class ApiContractTests(unittest.TestCase):
     def test_metadata_envelope(self):
         status, body = self._get("/v1/metadata")
         self.assertEqual(status, 200)
-        for key in ("schema_version", "source", "retrieved_at", "data_status", "items", "next_cursor"):
+        for key in (
+            "schema_version",
+            "source",
+            "retrieved_at",
+            "data_status",
+            "items",
+            "next_cursor",
+        ):
             self.assertIn(key, body)
         self.assertEqual(body["schema_version"], config.SCHEMA_VERSION)
         self.assertEqual(body["source"], config.REPO_NAME)
         self.assertTrue(body["items"])
         meta = body["items"][0]
         self.assertEqual(meta["role"], "synthesis_consumer")
-        self.assertEqual(meta["consumes_ports"], [8101, 8102, 8103, 8104, 8105, 8106, 8107])
+        self.assertEqual(
+            meta["consumes_ports"], [8101, 8102, 8103, 8104, 8105, 8106, 8107]
+        )
         self.assertIn("providers", meta)
         self.assertEqual(meta["storage_model"], "lake_first_gold_duckdb")
         self.assertEqual(meta["records_source_kind"], "gold_parquet")
@@ -747,7 +775,9 @@ class ApiContractTests(unittest.TestCase):
 
         status, headers = get_with_origin("http://127.0.0.1:4173")
         self.assertEqual(status, 200)
-        self.assertEqual(headers.get("Access-Control-Allow-Origin"), "http://127.0.0.1:4173")
+        self.assertEqual(
+            headers.get("Access-Control-Allow-Origin"), "http://127.0.0.1:4173"
+        )
 
         status, headers = get_with_origin("https://evil.example")
         self.assertEqual(status, 200)
@@ -764,7 +794,9 @@ class ApiContractTests(unittest.TestCase):
         )
         with urlopen(req, timeout=5) as resp:
             self.assertEqual(resp.status, 204)
-            self.assertEqual(resp.headers.get("Access-Control-Allow-Origin"), "http://localhost:3000")
+            self.assertEqual(
+                resp.headers.get("Access-Control-Allow-Origin"), "http://localhost:3000"
+            )
             methods = (resp.headers.get("Access-Control-Allow-Methods") or "").upper()
             self.assertIn("GET", methods)
             self.assertNotIn("POST", methods)

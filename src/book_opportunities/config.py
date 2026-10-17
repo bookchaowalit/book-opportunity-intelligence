@@ -1,4 +1,5 @@
 """Runtime configuration for book-opportunity-intelligence (synthesis consumer)."""
+
 from __future__ import annotations
 
 import os

@@ -5,6 +5,7 @@ Does not scrape. Writes purpose-built Gold datasets under:
 
 CSV remains an optional CLI projection only.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -69,6 +70,7 @@ def _load_shared():
     from data_lake import product_adapter as pa  # type: ignore
     from data_lake.storage import ObjectStore, StorageError  # type: ignore
     from data_lake.query import query_parquet, DuckDBUnavailable  # type: ignore
+
     return pa, ObjectStore, StorageError, query_parquet, DuckDBUnavailable
 
 
@@ -97,7 +99,12 @@ class GoldWriteError(RuntimeError):
 
 
 def utc_now_iso() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    return (
+        datetime.now(timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
 
 
 def make_synthesis_run_id(seed: str = "") -> str:
@@ -151,12 +158,14 @@ def _write_gold_parquet_local(rows: list[dict[str, Any]], destination: Path) -> 
         import pyarrow.parquet as pq  # type: ignore
     except ImportError as exc:
         raise GoldUnavailable(
-            "Gold Parquet write requires pyarrow "
-            "(infra/requirements-data-lake.txt)"
+            "Gold Parquet write requires pyarrow (infra/requirements-data-lake.txt)"
         ) from exc
     schema = pa.schema([(c, pa.string()) for c in GOLD_COLUMNS])
     arrays = [
-        pa.array([str(row.get(c, "") if row.get(c) is not None else "") for row in rows], type=pa.string())
+        pa.array(
+            [str(row.get(c, "") if row.get(c) is not None else "") for row in rows],
+            type=pa.string(),
+        )
         for c in GOLD_COLUMNS
     ]
     table = pa.Table.from_arrays(arrays, schema=schema)
@@ -175,28 +184,44 @@ def opportunities_to_gold_rows(
         row = {c: "" for c in GOLD_COLUMNS}
         row.update(
             {
-                "id": str(item.get("id") or item.get("record_id") or item.get("url") or idx),
+                "id": str(
+                    item.get("id") or item.get("record_id") or item.get("url") or idx
+                ),
                 "synthesis_run_id": synthesis_run_id,
                 "title": str(item.get("title") or ""),
                 "category": str(item.get("category") or ""),
                 "source": str(item.get("source") or ""),
                 "price": str(item.get("price") or ""),
                 "url": str(item.get("url") or ""),
-                "trend_score": str(item.get("trend_score") if item.get("trend_score") is not None else ""),
+                "trend_score": str(
+                    item.get("trend_score")
+                    if item.get("trend_score") is not None
+                    else ""
+                ),
                 "competition_level": str(item.get("competition_level") or ""),
                 "notes": str(item.get("notes") or ""),
                 "scraped_at": str(item.get("scraped_at") or scraped_at),
-                "event_time": str(item.get("event_time") or item.get("scraped_at") or scraped_at),
+                "event_time": str(
+                    item.get("event_time") or item.get("scraped_at") or scraped_at
+                ),
                 "score_delta": str(item.get("score_delta", 0)),
                 "trend_direction": str(item.get("trend_direction") or "stable"),
                 "rank_position": str(idx),
-                "input_source_product": str(item.get("input_source_product") or item.get("domain_product") or ""),
+                "input_source_product": str(
+                    item.get("input_source_product") or item.get("domain_product") or ""
+                ),
                 "input_source_record_id": str(item.get("input_source_record_id") or ""),
                 "input_event_id": str(item.get("input_event_id") or ""),
                 "input_raw_object_key": str(item.get("input_raw_object_key") or ""),
                 "input_ingest_run_id": str(item.get("input_ingest_run_id") or ""),
-                "input_domain_status": str(item.get("input_domain_status") or item.get("domain_status") or ""),
-                "input_domain_source": str(item.get("input_domain_source") or item.get("domain_input_source") or ""),
+                "input_domain_status": str(
+                    item.get("input_domain_status") or item.get("domain_status") or ""
+                ),
+                "input_domain_source": str(
+                    item.get("input_domain_source")
+                    or item.get("domain_input_source")
+                    or ""
+                ),
                 "layer": config.LAKE_LAYER,
                 "schema_version": config.LAKE_GOLD_SCHEMA_VERSION,
             }

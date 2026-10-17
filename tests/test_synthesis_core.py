@@ -1,4 +1,5 @@
 """Unit tests for the pure synthesis core: normalize, dedupe, score, rank."""
+
 from __future__ import annotations
 
 import unittest
@@ -21,7 +22,19 @@ from book_opportunities.synthesis import (
 
 class SafeParsingTests(unittest.TestCase):
     def test_safe_float_rejects_non_finite_and_garbage(self) -> None:
-        for bad in ("nan", "NaN", "inf", "-Infinity", float("nan"), float("inf"), "abc", None, "", [], True):
+        for bad in (
+            "nan",
+            "NaN",
+            "inf",
+            "-Infinity",
+            float("nan"),
+            float("inf"),
+            "abc",
+            None,
+            "",
+            [],
+            True,
+        ):
             with self.subTest(value=bad):
                 self.assertEqual(_safe_float(bad, 1.5), 1.5)
         self.assertEqual(_safe_float("2.5"), 2.5)
@@ -36,12 +49,16 @@ class SafeParsingTests(unittest.TestCase):
 
 class NormalizeTests(unittest.TestCase):
     def test_crypto_with_nan_change_does_not_crash(self) -> None:
-        row = normalize_domain_item("crypto", {"coin_id": "btc", "change_24h_pct": float("nan")})
+        row = normalize_domain_item(
+            "crypto", {"coin_id": "btc", "change_24h_pct": float("nan")}
+        )
         self.assertEqual(row["trend_score"], 50)
         self.assertIn("+0.00%", row["title"])
 
     def test_crypto_score_caps_and_competition(self) -> None:
-        row = normalize_domain_item("crypto", {"coin_id": "eth", "change_24h_pct": "-25"})
+        row = normalize_domain_item(
+            "crypto", {"coin_id": "eth", "change_24h_pct": "-25"}
+        )
         self.assertEqual(row["trend_score"], 90)
         self.assertEqual(row["competition_level"], "high")
         self.assertTrue(row["url"].startswith("local://crypto/"))
@@ -52,21 +69,42 @@ class NormalizeTests(unittest.TestCase):
         self.assertEqual(a["url"], b["url"])
 
     def test_seo_ranked_vs_unranked(self) -> None:
-        ranked = normalize_domain_item("seo", {"keyword": "k", "best_rank": 2, "found": "true"})
-        self.assertEqual((ranked["trend_score"], ranked["competition_level"]), (84, "low"))
+        ranked = normalize_domain_item(
+            "seo", {"keyword": "k", "best_rank": 2, "found": "true"}
+        )
+        self.assertEqual(
+            (ranked["trend_score"], ranked["competition_level"]), (84, "low")
+        )
         unranked = normalize_domain_item("seo", {"keyword": "k", "found": "no"})
-        self.assertEqual((unranked["trend_score"], unranked["competition_level"]), (45, "high"))
+        self.assertEqual(
+            (unranked["trend_score"], unranked["competition_level"]), (45, "high")
+        )
         self.assertIn("not ranked yet", unranked["notes"])
 
     def test_flights_cheaper_routes_score_higher(self) -> None:
-        cheap = normalize_domain_item("flights", {"origin": "BKK", "destination": "CNX", "price_thb": "1500"})
-        mid = normalize_domain_item("flights", {"origin": "BKK", "destination": "NRT", "price_thb": "8000"})
-        dear = normalize_domain_item("flights", {"origin": "BKK", "destination": "LHR", "price_thb": "25000"})
-        self.assertEqual([cheap["trend_score"], mid["trend_score"], dear["trend_score"]], [70, 60, 50])
+        cheap = normalize_domain_item(
+            "flights", {"origin": "BKK", "destination": "CNX", "price_thb": "1500"}
+        )
+        mid = normalize_domain_item(
+            "flights", {"origin": "BKK", "destination": "NRT", "price_thb": "8000"}
+        )
+        dear = normalize_domain_item(
+            "flights", {"origin": "BKK", "destination": "LHR", "price_thb": "25000"}
+        )
+        self.assertEqual(
+            [cheap["trend_score"], mid["trend_score"], dear["trend_score"]],
+            [70, 60, 50],
+        )
         self.assertEqual(cheap["price"], "฿1500")
 
     def test_domain_status_penalties_and_lineage(self) -> None:
-        item = {"name": "Tool", "upvotes": 50, "pricing": "Free", "record_id": "r1", "event_id": "e1"}
+        item = {
+            "name": "Tool",
+            "upvotes": 50,
+            "pricing": "Free",
+            "record_id": "r1",
+            "event_id": "e1",
+        }
         ok = normalize_domain_item("ai_tools", item)
         stale = normalize_domain_item("ai_tools", item, domain_status="stale")
         empty = normalize_domain_item("ai_tools", item, domain_status="empty")
@@ -89,13 +127,27 @@ class ScoreAndRankTests(unittest.TestCase):
     def test_keyword_boosts_are_whole_word(self) -> None:
         self.assertTrue(_has_keyword("new ai tool", "ai"))
         self.assertFalse(_has_keyword("domain names", "ai"))
-        self.assertEqual(score_opportunity({"trend_score": 50, "title": "AI revenue deal"}), 65)
+        self.assertEqual(
+            score_opportunity({"trend_score": 50, "title": "AI revenue deal"}), 65
+        )
         self.assertEqual(score_opportunity({"trend_score": 50, "title": "Domain"}), 50)
 
     def test_competition_and_stale_adjustments_are_clamped(self) -> None:
-        self.assertEqual(score_opportunity({"trend_score": 98, "title": "ai", "competition_level": "low"}), 100)
         self.assertEqual(
-            score_opportunity({"trend_score": 3, "competition_level": "high", "domain_status": "stale"}), 0
+            score_opportunity(
+                {"trend_score": 98, "title": "ai", "competition_level": "low"}
+            ),
+            100,
+        )
+        self.assertEqual(
+            score_opportunity(
+                {
+                    "trend_score": 3,
+                    "competition_level": "high",
+                    "domain_status": "stale",
+                }
+            ),
+            0,
         )
 
     def test_rank_is_stable_and_tolerates_bad_scores(self) -> None:
@@ -104,10 +156,14 @@ class ScoreAndRankTests(unittest.TestCase):
             {"title": "a", "url": "1", "trend_score": "60.0"},
             {"title": "c", "url": "3", "trend_score": "nan"},
         ]
-        self.assertEqual([r["title"] for r in rank_opportunities(rows)], ["a", "b", "c"])
+        self.assertEqual(
+            [r["title"] for r in rank_opportunities(rows)], ["a", "b", "c"]
+        )
 
     def test_categorize_prefers_domain_category_without_keywords(self) -> None:
-        self.assertEqual(categorize_opportunity({"title": "zzz", "category": "custom"}), "custom")
+        self.assertEqual(
+            categorize_opportunity({"title": "zzz", "category": "custom"}), "custom"
+        )
 
 
 class DedupeTests(unittest.TestCase):
@@ -120,13 +176,21 @@ class DedupeTests(unittest.TestCase):
         self.assertFalse(fuzzy_title_match("Bitcoin", "Bitcoin ETF inflows hit record"))
         self.assertTrue(fuzzy_title_match("Bitcoin", "bitcoin"))
         self.assertFalse(fuzzy_title_match("AI tools", "AI regulation in Thailand"))
-        self.assertTrue(fuzzy_title_match("Cheap flights BKK Tokyo", "cheap flights bkk tokyo deal"))
+        self.assertTrue(
+            fuzzy_title_match("Cheap flights BKK Tokyo", "cheap flights bkk tokyo deal")
+        )
 
     def test_fuzzy_title_match_handles_thai_without_word_spaces(self) -> None:
         # Same Thai title with different spacing / punctuation from two sources.
-        self.assertTrue(fuzzy_title_match("ทุนการศึกษาปริญญาโท ญี่ปุ่น 2026", "ทุนการศึกษาปริญญาโทญี่ปุ่น - 2026"))
+        self.assertTrue(
+            fuzzy_title_match("ทุนการศึกษาปริญญาโท ญี่ปุ่น 2026", "ทุนการศึกษาปริญญาโทญี่ปุ่น - 2026")
+        )
         # Small edit (one appended word) still merges.
-        self.assertTrue(fuzzy_title_match("เปิดรับสมัครทุนการศึกษาปริญญาโทญี่ปุ่น", "เปิดรับสมัครทุนการศึกษาปริญญาโทญี่ปุ่นล่าสุด"))
+        self.assertTrue(
+            fuzzy_title_match(
+                "เปิดรับสมัครทุนการศึกษาปริญญาโทญี่ปุ่น", "เปิดรับสมัครทุนการศึกษาปริญญาโทญี่ปุ่นล่าสุด"
+            )
+        )
         # Different opportunities that only share a common word do not merge.
         self.assertFalse(fuzzy_title_match("ทุนการศึกษาปริญญาโทญี่ปุ่น", "ทุนวิจัยสตาร์ทอัพเกาหลี"))
         # A short title contained in a longer one is not a duplicate.
@@ -139,9 +203,24 @@ class DedupeTests(unittest.TestCase):
 
     def test_deduplicate_merges_thai_duplicates_across_sources(self) -> None:
         rows = [
-            {"url": "https://a.example/1", "title": "ทุนการศึกษาปริญญาโท ญี่ปุ่น 2026", "trend_score": 60, "source": "a"},
-            {"url": "https://b.example/9", "title": "ทุนการศึกษาปริญญาโทญี่ปุ่น 2026", "trend_score": 70, "source": "b"},
-            {"url": "https://c.example/3", "title": "ทุนวิจัยสตาร์ทอัพเกาหลี", "trend_score": 50, "source": "c"},
+            {
+                "url": "https://a.example/1",
+                "title": "ทุนการศึกษาปริญญาโท ญี่ปุ่น 2026",
+                "trend_score": 60,
+                "source": "a",
+            },
+            {
+                "url": "https://b.example/9",
+                "title": "ทุนการศึกษาปริญญาโทญี่ปุ่น 2026",
+                "trend_score": 70,
+                "source": "b",
+            },
+            {
+                "url": "https://c.example/3",
+                "title": "ทุนวิจัยสตาร์ทอัพเกาหลี",
+                "trend_score": 50,
+                "source": "c",
+            },
         ]
         merged = deduplicate(rows)
         self.assertEqual(len(merged), 2)
@@ -160,24 +239,44 @@ class DedupeTests(unittest.TestCase):
 
     def test_boost_is_capped_at_100_and_input_not_mutated(self) -> None:
         first = {"title": "x y", "url": "u", "trend_score": 99, "source": "a"}
-        out = deduplicate([first, {"title": "x y", "url": "u", "trend_score": 10, "source": "b"}])
+        out = deduplicate(
+            [first, {"title": "x y", "url": "u", "trend_score": 10, "source": "b"}]
+        )
         self.assertEqual(out[0]["trend_score"], 100)
         self.assertEqual(first["trend_score"], 99)
 
 
 class SynthesizeTests(unittest.TestCase):
-    def _result(self, product_id: str, state: str, items: list[dict]) -> DomainLoadResult:
-        return DomainLoadResult(product_id=product_id, port=8101, state=state, source="fixture",
-                                envelope={"items": items}, items=items)
+    def _result(
+        self, product_id: str, state: str, items: list[dict]
+    ) -> DomainLoadResult:
+        return DomainLoadResult(
+            product_id=product_id,
+            port=8101,
+            state=state,
+            source="fixture",
+            envelope={"items": items},
+            items=items,
+        )
 
     def test_end_to_end_is_deterministic_and_ranked(self) -> None:
         results = [
-            self._result("crypto", "ready", [{"coin_id": "btc", "change_24h_pct": "3"}]),
-            self._result("ai_tools", "ready", [{"name": "Writer", "upvotes": 100, "pricing": "free"}]),
+            self._result(
+                "crypto", "ready", [{"coin_id": "btc", "change_24h_pct": "3"}]
+            ),
+            self._result(
+                "ai_tools",
+                "ready",
+                [{"name": "Writer", "upvotes": 100, "pricing": "free"}],
+            ),
             self._result("fx", "timeout", []),
         ]
-        a = synthesize(results, scraped_at="2026-01-01 00:00:00", synthesis_run_id="run-1")
-        b = synthesize(results, scraped_at="2026-01-01 00:00:00", synthesis_run_id="run-1")
+        a = synthesize(
+            results, scraped_at="2026-01-01 00:00:00", synthesis_run_id="run-1"
+        )
+        b = synthesize(
+            results, scraped_at="2026-01-01 00:00:00", synthesis_run_id="run-1"
+        )
         self.assertEqual(a["items"], b["items"])
         self.assertEqual(a["data_status"], "ok")
         self.assertEqual((a["domains_usable"], a["domains_total"]), (2, 3))
@@ -188,14 +287,20 @@ class SynthesizeTests(unittest.TestCase):
         self.assertTrue(all(r["synthesis_run_id"] == "run-1" for r in a["items"]))
 
     def test_stale_and_empty_status(self) -> None:
-        stale = synthesize([self._result("stocks", "stale", [{"symbol": "X"}])], synthesis_run_id="r")
+        stale = synthesize(
+            [self._result("stocks", "stale", [{"symbol": "X"}])], synthesis_run_id="r"
+        )
         self.assertEqual(stale["data_status"], "stale")
-        empty = synthesize([self._result("stocks", "unavailable", [])], synthesis_run_id="r")
+        empty = synthesize(
+            [self._result("stocks", "unavailable", [])], synthesis_run_id="r"
+        )
         self.assertEqual(empty["data_status"], "empty")
         self.assertEqual(empty["items"], [])
 
     def test_finalize_assigns_ids_from_url(self) -> None:
-        rows = finalize_records([{"title": "t", "url": "local://x/1", "trend_score": 10}], scraped_at="s")
+        rows = finalize_records(
+            [{"title": "t", "url": "local://x/1", "trend_score": 10}], scraped_at="s"
+        )
         self.assertEqual(rows[0]["id"], "local://x/1")
         self.assertEqual(rows[0]["scraped_at"], "s")
 

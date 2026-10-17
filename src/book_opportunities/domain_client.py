@@ -7,6 +7,7 @@ Rules:
 - Safe load states: ready / empty / stale / timeout / unavailable / error
 - Never scrape upstream providers; never call Firecrawl/Telegram/Todoist
 """
+
 from __future__ import annotations
 
 import json
@@ -55,7 +56,9 @@ def is_data_product_envelope(value: Any) -> bool:
             return False
     if not isinstance(value.get("items"), list):
         return False
-    return isinstance(value.get("schema_version"), str) and isinstance(value.get("source"), str)
+    return isinstance(value.get("schema_version"), str) and isinstance(
+        value.get("source"), str
+    )
 
 
 def sanitize_user_message(
@@ -182,9 +185,7 @@ def fetch_domain_records(
                     source="fixture",
                     envelope=envelope,
                     items=list(envelope.get("items") or []),
-                    error_message=sanitize_user_message(
-                        "invalid_envelope"
-                    )
+                    error_message=sanitize_user_message("invalid_envelope")
                     + "; using fixture fallback",
                 )
             except Exception:

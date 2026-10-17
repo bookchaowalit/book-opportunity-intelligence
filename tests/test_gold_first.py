@@ -1,4 +1,5 @@
 """Gold/synthesis lake-first tests for book-opportunity-intelligence."""
+
 from __future__ import annotations
 
 import json
@@ -10,12 +11,22 @@ from unittest import mock
 
 from book_opportunities import config, gold
 from book_opportunities.domain_client import DomainLoadResult, fetch_all_domains
-from book_opportunities.ingest import project_csv, run_synthesis, write_gold_from_synthesis
-from book_opportunities.store import load_history, load_records, seed_gold_from_synthesis
+from book_opportunities.ingest import (
+    project_csv,
+    run_synthesis,
+    write_gold_from_synthesis,
+)
+from book_opportunities.store import (
+    load_history,
+    load_records,
+    seed_gold_from_synthesis,
+)
 from book_opportunities.synthesis import synthesize
 
 
-DOMAIN_FIXTURE_ROOT = Path(__file__).resolve().parents[1] / "fixtures" / "domain-products"
+DOMAIN_FIXTURE_ROOT = (
+    Path(__file__).resolve().parents[1] / "fixtures" / "domain-products"
+)
 
 
 def _lake_deps_available() -> bool:
@@ -24,9 +35,7 @@ def _lake_deps_available() -> bool:
 
 class SynthesisLineageTests(unittest.TestCase):
     def test_items_carry_synthesis_run_and_input_lineage(self):
-        results = fetch_all_domains(
-            use_fixtures=True, fixtures_dir=DOMAIN_FIXTURE_ROOT
-        )
+        results = fetch_all_domains(use_fixtures=True, fixtures_dir=DOMAIN_FIXTURE_ROOT)
         out = synthesize(results, synthesis_run_id="test-run-fixed")
         self.assertEqual(out["synthesis_run_id"], "test-run-fixed")
         self.assertEqual(out["layer"], "gold")
@@ -115,23 +124,32 @@ class SynthesisLineageTests(unittest.TestCase):
         self.assertEqual(winner["input_ingest_run_id"], "run-ai-1")
 
     def test_scoring_replay_deterministic(self):
-        results = fetch_all_domains(
-            use_fixtures=True, fixtures_dir=DOMAIN_FIXTURE_ROOT
+        results = fetch_all_domains(use_fixtures=True, fixtures_dir=DOMAIN_FIXTURE_ROOT)
+        a = synthesize(
+            results, synthesis_run_id="replay-a", scraped_at="2026-08-07 10:00:00"
         )
-        a = synthesize(results, synthesis_run_id="replay-a", scraped_at="2026-08-07 10:00:00")
-        b = synthesize(results, synthesis_run_id="replay-b", scraped_at="2026-08-07 10:00:00")
+        b = synthesize(
+            results, synthesis_run_id="replay-b", scraped_at="2026-08-07 10:00:00"
+        )
         self.assertEqual(
-            [(i["title"], i["trend_score"], i["url"], i["rank_position"]) for i in a["items"]],
-            [(i["title"], i["trend_score"], i["url"], i["rank_position"]) for i in b["items"]],
+            [
+                (i["title"], i["trend_score"], i["url"], i["rank_position"])
+                for i in a["items"]
+            ],
+            [
+                (i["title"], i["trend_score"], i["url"], i["rank_position"])
+                for i in b["items"]
+            ],
         )
 
 
-@unittest.skipUnless(_lake_deps_available(), "shared data_lake runtime not installed (pip install -e '.[lake]')")
+@unittest.skipUnless(
+    _lake_deps_available(),
+    "shared data_lake runtime not installed (pip install -e '.[lake]')",
+)
 class GoldWriteReadTests(unittest.TestCase):
     def test_write_and_read_gold_without_csv(self):
-        results = fetch_all_domains(
-            use_fixtures=True, fixtures_dir=DOMAIN_FIXTURE_ROOT
-        )
+        results = fetch_all_domains(use_fixtures=True, fixtures_dir=DOMAIN_FIXTURE_ROOT)
         synthesized = synthesize(
             results,
             synthesis_run_id="gold-write-1",
@@ -158,8 +176,9 @@ class GoldWriteReadTests(unittest.TestCase):
             # No CSV unless projected.
             self.assertFalse((out / config.RECORDS_FILE).exists())
 
-            with mock.patch.object(config, "DATA_LAKE_URI", lake_uri), mock.patch.object(
-                config, "DATA_DIR", out
+            with (
+                mock.patch.object(config, "DATA_LAKE_URI", lake_uri),
+                mock.patch.object(config, "DATA_DIR", out),
             ):
                 records = load_records(data_lake_uri=lake_uri)
                 history = load_history(data_lake_uri=lake_uri)
@@ -177,8 +196,7 @@ class GoldWriteReadTests(unittest.TestCase):
                 for i in synthesized["items"]
             }
             got = {
-                (i["title"], int(i["trend_score"]), i["url"])
-                for i in records["items"]
+                (i["title"], int(i["trend_score"]), i["url"]) for i in records["items"]
             }
             self.assertEqual(expected, got)
 
@@ -189,9 +207,13 @@ class GoldWriteReadTests(unittest.TestCase):
             def boom(*_a, **_k):
                 raise gold.GoldWriteError("simulated gold failure")
 
-            with mock.patch(
-                "book_opportunities.ingest.write_gold_from_synthesis", side_effect=boom
-            ), mock.patch.object(config, "DOMAIN_FIXTURES_DIR", DOMAIN_FIXTURE_ROOT):
+            with (
+                mock.patch(
+                    "book_opportunities.ingest.write_gold_from_synthesis",
+                    side_effect=boom,
+                ),
+                mock.patch.object(config, "DOMAIN_FIXTURES_DIR", DOMAIN_FIXTURE_ROOT),
+            ):
                 with self.assertRaises(gold.GoldWriteError):
                     run_synthesis(
                         use_fixtures=True,
@@ -233,12 +255,16 @@ class GoldWriteReadTests(unittest.TestCase):
                 order.append("csv")
                 return project_csv(items, output_dir=output_dir)
 
-            with mock.patch(
-                "book_opportunities.ingest.write_gold_from_synthesis",
-                side_effect=fake_gold,
-            ), mock.patch(
-                "book_opportunities.ingest.project_csv", side_effect=fake_csv
-            ), mock.patch.object(config, "DOMAIN_FIXTURES_DIR", DOMAIN_FIXTURE_ROOT):
+            with (
+                mock.patch(
+                    "book_opportunities.ingest.write_gold_from_synthesis",
+                    side_effect=fake_gold,
+                ),
+                mock.patch(
+                    "book_opportunities.ingest.project_csv", side_effect=fake_csv
+                ),
+                mock.patch.object(config, "DOMAIN_FIXTURES_DIR", DOMAIN_FIXTURE_ROOT),
+            ):
                 run_synthesis(
                     use_fixtures=True,
                     dry_run=False,
@@ -251,9 +277,7 @@ class GoldWriteReadTests(unittest.TestCase):
 
     def test_api_store_ignores_csv_projection(self):
         """Even if CSV exists with different rows, store reads Gold only."""
-        results = fetch_all_domains(
-            use_fixtures=True, fixtures_dir=DOMAIN_FIXTURE_ROOT
-        )
+        results = fetch_all_domains(use_fixtures=True, fixtures_dir=DOMAIN_FIXTURE_ROOT)
         synthesized = synthesize(
             results,
             synthesis_run_id="csv-ignore",
@@ -311,7 +335,9 @@ class GoldWriteReadTests(unittest.TestCase):
                 output_dir=out,
             )
             self.assertEqual(gold_result["opportunities"]["record_count"], 0)
-            lineage = json.loads((out / config.LINEAGE_FILE).read_text(encoding="utf-8"))
+            lineage = json.loads(
+                (out / config.LINEAGE_FILE).read_text(encoding="utf-8")
+            )
             self.assertEqual(lineage["synthesis_run_id"], "empty-run")
             self.assertEqual(lineage["data_status"], "empty")
             self.assertEqual(len(lineage["input_summary"]), 1)
