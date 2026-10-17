@@ -1,46 +1,40 @@
+# CI + security baseline (DevSecOps Phase 1). Public repository: GitHub-hosted runners.
 name: CI
 
 on:
-  # Gate every branch, not only main (feature branches were untested).
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
-
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    env:
-      FREE_ONLY: "true"
-      ALLOW_PAID_PROVIDERS: "false"
-      ALLOW_EXTERNAL_WRITES: "false"
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-      # [lake] installs the pinned solo-empire-data-lake runtime, so the
-      # Gold/DuckDB tests run here instead of skipping.
-      - run: python -m pip install -e ".[dev,lake]"
-      - name: Check shared lake runtime is importable
-        run: python -c "from book_opportunities import gold; assert gold.shared_runtime_available()"
-      - run: ruff check --select F src tests
-      # Unit/contract suite only. The multi-API self-launcher and its opt-in
-      # e2e were retired 2026-10-15 (BOO-248); see docs/opportunity-v1-consumer-scan-2026-10-15.md.
-      - name: Tests (standalone, including Gold lake integration)
-        env:
-          SOLO_EMPIRE_DATA_LAKE_URI: ${{ runner.temp }}/opportunity-lake
-        run: python -m unittest discover -s tests -v
-      - run: python -m compileall -q src
-      - run: python -m book_opportunities.ingest --help
-      - run: book-opportunity-intelligence --help
-      # Packaging: the sdist/wheel must build and the wheel must import.
-      - run: python -m pip install build && python -m build --outdir dist .
-      - run: python -m pip install --force-reinstall --no-deps dist/*.whl && python -c "import book_opportunities.synthesis"
+  python:
+    uses: bookchaowalit/platform-ci-workflows/.github/workflows/ci-python.yml@c37ef9d113eefb3ed45429717cb7ca201192c3fc # v1.0.1
+    with:
+      python-version: "3.12"
+      # [lake] installs the pinned solo-empire-data-lake runtime, so the Gold/DuckDB tests
+      # run here instead of skipping.
+      install-command: uv pip install -e ".[dev,lake]"
+      # Same checks as the previous workflow: free-only guards, lake runtime available,
+      # unittest suite against a throwaway lake, compile, CLI smoke and a wheel build/import.
+      test-command: |
+        export FREE_ONLY=true ALLOW_PAID_PROVIDERS=false ALLOW_EXTERNAL_WRITES=false
+        python -c "from book_opportunities import gold; assert gold.shared_runtime_available()"
+        SOLO_EMPIRE_DATA_LAKE_URI="$RUNNER_TEMP/opportunity-lake" python -m unittest discover -s tests -v
+        python -m compileall -q src
+        python -m book_opportunities.ingest --help
+        book-opportunity-intelligence --help
+        uv pip install build
+        python -m build --outdir "$RUNNER_TEMP/dist" .
+        uv pip install --reinstall --no-deps "$RUNNER_TEMP"/dist/*.whl
+        python -c "import book_opportunities.synthesis"
+
+  security:
+    uses: bookchaowalit/platform-ci-workflows/.github/workflows/security.yml@c37ef9d113eefb3ed45429717cb7ca201192c3fc # v1.0.1
