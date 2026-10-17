@@ -2,8 +2,9 @@
 name: CI
 
 on:
+  # Gate every branch, not only main (kept from the previous workflow: feature branches
+  # without a PR were otherwise untested).
   push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
 
