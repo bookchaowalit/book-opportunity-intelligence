@@ -11,6 +11,7 @@ Default path:
 Never scrapes upstream providers. Never calls Firecrawl, Telegram, or Todoist
 in the default free-only path. Legacy mega-scraper lives under archive/.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -57,9 +58,7 @@ def _print_summary(result: dict[str, Any]) -> None:
     print(f"  schema_version={result['schema_version']}")
     print(f"  data_status={result['data_status']}")
     print(f"  synthesis_run_id={result.get('synthesis_run_id')}")
-    print(
-        f"  domains_usable={result['domains_usable']}/{result['domains_total']}"
-    )
+    print(f"  domains_usable={result['domains_usable']}/{result['domains_total']}")
     print(f"  opportunities={len(result['items'])}")
     for row in result["input_summary"]:
         err = f" ({row['error_message']})" if row.get("error_message") else ""

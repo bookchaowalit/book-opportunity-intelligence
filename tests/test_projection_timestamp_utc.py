@@ -1,4 +1,5 @@
 """Gold fallback ``scraped_at`` must be UTC: readers treat naive stamps as UTC."""
+
 from __future__ import annotations
 
 import os
@@ -25,11 +26,16 @@ class GoldScrapedAtUtcTests(unittest.TestCase):
         os.environ["TZ"] = "Asia/Bangkok"  # UTC+7, no DST
         time.tzset()
         try:
-            with tempfile.TemporaryDirectory() as tmp, mock.patch.object(
-                gold, "write_gold_dataset", side_effect=fake_write
-            ), mock.patch.object(
-                gold, "write_local_synthesis_manifest", return_value=Path(tmp) / "m.json"
-            ), mock.patch("builtins.print"):
+            with (
+                tempfile.TemporaryDirectory() as tmp,
+                mock.patch.object(gold, "write_gold_dataset", side_effect=fake_write),
+                mock.patch.object(
+                    gold,
+                    "write_local_synthesis_manifest",
+                    return_value=Path(tmp) / "m.json",
+                ),
+                mock.patch("builtins.print"),
+            ):
                 ingest.write_gold_from_synthesis(
                     {"items": [], "synthesis_run_id": "run-1"},
                     data_lake_uri="file:///tmp/unused",
@@ -42,7 +48,9 @@ class GoldScrapedAtUtcTests(unittest.TestCase):
                 os.environ["TZ"] = old
             time.tzset()
         self.assertTrue(seen)
-        parsed = datetime.strptime(seen[0], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+        parsed = datetime.strptime(seen[0], "%Y-%m-%d %H:%M:%S").replace(
+            tzinfo=timezone.utc
+        )
         drift = abs((datetime.now(timezone.utc) - parsed).total_seconds())
         self.assertLess(drift, 300, f"scraped_at {seen[0]!r} is not UTC")
 

@@ -18,7 +18,7 @@ lake = [
   "duckdb>=0.10",
   "solo-empire-data-lake[lake] @ https://github.com/bookchaowalit/data-lake-core/archive/b8f8698995a4d4283247bd432d521b337ef8ec94.tar.gz",
 ]
-dev = ["ruff"]
+dev = ["ruff==0.17.1"]  # pinned so a Ruff release cannot change what CI enforces
 
 [project.scripts]
 book-opportunity-intelligence = "book_opportunities.ingest:main"
@@ -29,3 +29,13 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+
+[tool.ruff]
+# archive/ is unreachable historical reference code (see archive/README.md); the previous CI
+# linted only src/ and tests/.
+extend-exclude = ["archive"]
+
+[tool.ruff.lint]
+# Pin the classic default rule set explicitly so newer ruff releases (0.16+ widened the
+# defaults) do not change what CI enforces; same choice as marketing-seo-ranking-data.
+select = ["E4", "E7", "E9", "F"]

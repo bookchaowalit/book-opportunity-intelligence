@@ -4,6 +4,7 @@ Pipeline: normalize → deduplicate → categorize → score → rank
 
 Does not scrape upstream sources. Does not perform external writes.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -181,7 +182,10 @@ def normalize_domain_item(
         apy = _safe_float(item.get("apy"))
         title = f"DeFi yield: {project} {symbol} APY {apy:.2f}%"
         price = f"{apy:.2f}%"
-        url = str(item.get("url") or _slug_url(product_id, str(item.get("pool_id") or project)))
+        url = str(
+            item.get("url")
+            or _slug_url(product_id, str(item.get("pool_id") or project))
+        )
         base_score = 55 + min(35, int(apy * 2))
         competition = "medium" if apy < 20 else "high"
         category = "trending-products"
@@ -203,7 +207,9 @@ def normalize_domain_item(
         rank = item.get("best_rank")
         found = str(item.get("found") or "").lower() in {"true", "1", "yes"}
         title = f"SEO keyword: {keyword}"
-        url = str(item.get("best_url") or item.get("url") or _slug_url(product_id, keyword))
+        url = str(
+            item.get("best_url") or item.get("url") or _slug_url(product_id, keyword)
+        )
         rank_i = _safe_int(rank, 0)
         if found and rank_i > 0:
             base_score = max(40, 90 - rank_i * 3)
@@ -224,7 +230,9 @@ def normalize_domain_item(
         base_score = 55 + min(35, upvotes // 5)
         competition = "low" if pricing.lower() == "free" else "medium"
         category = "ai-content"
-        notes = f"{notes}; tags={item.get('opportunity_tags') or item.get('tags') or ''}"
+        notes = (
+            f"{notes}; tags={item.get('opportunity_tags') or item.get('tags') or ''}"
+        )
 
     else:
         title = str(item.get("title") or item.get("name") or product_id)
@@ -259,7 +267,9 @@ def normalize_domain_item(
     }
 
 
-def normalize_domain_results(results: Iterable[DomainLoadResult]) -> list[dict[str, Any]]:
+def normalize_domain_results(
+    results: Iterable[DomainLoadResult],
+) -> list[dict[str, Any]]:
     candidates: list[dict[str, Any]] = []
     for result in results:
         # empty/unavailable/timeout/error with no items contribute nothing
@@ -314,7 +324,9 @@ def _thai_ngrams(title: str) -> set[str]:
         return set()
     if len(thai) <= _THAI_NGRAM:
         return {"th:" + thai}
-    return {"th:" + thai[i : i + _THAI_NGRAM] for i in range(len(thai) - _THAI_NGRAM + 1)}
+    return {
+        "th:" + thai[i : i + _THAI_NGRAM] for i in range(len(thai) - _THAI_NGRAM + 1)
+    }
 
 
 def fuzzy_title_match(title_a: str, title_b: str, threshold: float = 0.6) -> bool:
@@ -361,7 +373,9 @@ def deduplicate(opportunities: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     break
         if url_match is not None:
             existing = merged[url_match]
-            if _safe_int(opp.get("trend_score")) > _safe_int(existing.get("trend_score")):
+            if _safe_int(opp.get("trend_score")) > _safe_int(
+                existing.get("trend_score")
+            ):
                 old_source = existing.get("source")
                 merged[url_match] = dict(opp)
                 merged[url_match]["notes"] = (
@@ -384,7 +398,9 @@ def deduplicate(opportunities: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 break
         if title_match is not None:
             existing = merged[title_match]
-            if _safe_int(opp.get("trend_score")) > _safe_int(existing.get("trend_score")):
+            if _safe_int(opp.get("trend_score")) > _safe_int(
+                existing.get("trend_score")
+            ):
                 old_source = existing.get("source")
                 merged[title_match] = dict(opp)
                 merged[title_match]["notes"] = (
@@ -412,7 +428,9 @@ def _has_keyword(text: str, keyword: str) -> bool:
         return False
     if " " in keyword or "-" in keyword:
         return keyword in text
-    return re.search(rf"(?<![a-z0-9]){re.escape(keyword)}(?![a-z0-9])", text) is not None
+    return (
+        re.search(rf"(?<![a-z0-9]){re.escape(keyword)}(?![a-z0-9])", text) is not None
+    )
 
 
 def categorize_opportunity(opportunity: dict[str, Any]) -> str:
@@ -475,7 +493,9 @@ def finalize_records(
         row["source"] = str(opp.get("source") or "domain")
         row["price"] = str(opp.get("price") or "")
         row["url"] = str(opp.get("url") or "")
-        row["trend_score"] = int(score_opportunity({**opp, "category": row["category"]}))
+        row["trend_score"] = int(
+            score_opportunity({**opp, "category": row["category"]})
+        )
         row["competition_level"] = str(opp.get("competition_level") or "medium")
         row["notes"] = str(opp.get("notes") or "")[:240]
         row["scraped_at"] = stamp
@@ -483,7 +503,9 @@ def finalize_records(
         row["score_delta"] = str(opp.get("score_delta", 0))
         row["trend_direction"] = str(opp.get("trend_direction") or "stable")
         # Gold lineage — preserved through score/rank for replay + audit.
-        row["synthesis_run_id"] = str(synthesis_run_id or opp.get("synthesis_run_id") or "")
+        row["synthesis_run_id"] = str(
+            synthesis_run_id or opp.get("synthesis_run_id") or ""
+        )
         row["input_source_product"] = str(
             opp.get("input_source_product") or opp.get("domain_product") or ""
         )
@@ -534,7 +556,11 @@ def synthesize(
             "product_id": r.product_id,
             "port": r.port,
             "repo": next(
-                (p.get("repo") for p in config.DOMAIN_PRODUCTS if p["id"] == r.product_id),
+                (
+                    p.get("repo")
+                    for p in config.DOMAIN_PRODUCTS
+                    if p["id"] == r.product_id
+                ),
                 "",
             ),
             "state": r.state,
@@ -544,7 +570,11 @@ def synthesize(
             # Sample lineage from first item when present (domain may be empty/down).
             "sample_record_id": (
                 str(
-                    (r.items[0].get("record_id") or r.items[0].get("source_record_id") or "")
+                    (
+                        r.items[0].get("record_id")
+                        or r.items[0].get("source_record_id")
+                        or ""
+                    )
                 )
                 if r.items
                 else ""

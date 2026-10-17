@@ -6,6 +6,7 @@ external write / paid endpoints. Only 127.0.0.1 domain APIs are allowed.
 Uses httpx when installed; otherwise falls back to stdlib urllib for simple
 loopback GETs so offline/local e2e works without extra installs.
 """
+
 from __future__ import annotations
 
 import json
@@ -27,7 +28,9 @@ except ImportError:  # pragma: no cover
 
 
 class UpstreamError(Exception):
-    def __init__(self, message: str, *, status_code: int | None = None, kind: str = "error"):
+    def __init__(
+        self, message: str, *, status_code: int | None = None, kind: str = "error"
+    ):
         super().__init__(message)
         self.status_code = status_code
         self.kind = kind
@@ -177,7 +180,9 @@ def _request_json_httpx(
 
             content = resp.content
             if len(content) > config.MAX_RESPONSE_BYTES:
-                raise UpstreamError("Upstream response exceeded size limit", kind="size_limit")
+                raise UpstreamError(
+                    "Upstream response exceeded size limit", kind="size_limit"
+                )
             return resp.json()
         except UpstreamError:
             raise
@@ -187,7 +192,9 @@ def _request_json_httpx(
             msg = str(exc).lower()
             if "timeout" in name or "timeout" in msg or "abort" in msg:
                 if attempt >= config.MAX_RETRIES:
-                    raise UpstreamError("Upstream request timed out", kind="timeout") from exc
+                    raise UpstreamError(
+                        "Upstream request timed out", kind="timeout"
+                    ) from exc
                 sleep(min(2**attempt, 8))
                 continue
             raise UpstreamError("Upstream request failed", kind="network") from exc
@@ -214,7 +221,9 @@ def request_json(
     require_provider(provider)
     _assert_loopback_get(method, url)
     if json_body is not None:
-        raise UpstreamError("JSON request bodies are not allowed", kind="method_forbidden")
+        raise UpstreamError(
+            "JSON request bodies are not allowed", kind="method_forbidden"
+        )
 
     timeout = config.REQUEST_TIMEOUT_SECONDS if timeout is None else timeout
     full_url = _build_url(url, params)

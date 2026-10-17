@@ -3,6 +3,7 @@
 HTTP API reads Gold Parquet via DuckDB only. CSV is a CLI projection helper
 and is never consulted by load_records / load_history / get_record.
 """
+
 from __future__ import annotations
 
 import csv
@@ -28,7 +29,12 @@ TIMESTAMP_KEYS = (
 
 
 def utc_now_iso() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    return (
+        datetime.now(timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
 
 
 def _parse_ts(value: str) -> Optional[datetime]:
@@ -118,7 +124,9 @@ def gold_opportunity_item(
         "input_domain_status": _stringify(row.get("input_domain_status")),
         "input_domain_source": _stringify(row.get("input_domain_source")),
         "layer": _stringify(row.get("layer") or config.LAKE_LAYER),
-        "schema_version": _stringify(row.get("schema_version") or config.LAKE_GOLD_SCHEMA_VERSION),
+        "schema_version": _stringify(
+            row.get("schema_version") or config.LAKE_GOLD_SCHEMA_VERSION
+        ),
     }
     if history:
         item["record_id"] = make_record_id(item) + f"#h{history_idx}"
@@ -371,7 +379,9 @@ def load_csv_projection(
     items = []
     for idx, row in enumerate(rows):
         item = dict(row)
-        item["record_id"] = make_record_id(row) + (f"#h{idx}" if kind == "history" else "")
+        item["record_id"] = make_record_id(row) + (
+            f"#h{idx}" if kind == "history" else ""
+        )
         items.append(item)
     status, _ = _freshness(items)
     return {
